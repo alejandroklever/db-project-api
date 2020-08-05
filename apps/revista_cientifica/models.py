@@ -19,7 +19,7 @@ class MCC(models.Model):
 
 
 class ArticleEvaluation(models.Model):
-    state = models.CharField(max_length=150, blank=False)
+    evaluation = models.CharField(max_length=150, blank=False)
 
 
 class Article(models.Model):
