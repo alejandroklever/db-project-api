@@ -10,26 +10,27 @@ class Notification(models.Model):
     date = models.DateTimeField(default=now, null=False, blank=True)
 
     def __str__(self):
-        return f'{self.content} para {self.user}'
+        return f'destiny: {self.user}\n content: {self.content}'
 
 
 class MCC(models.Model):
     id = models.CharField(max_length=20, primary_key=True)
     area = models.CharField(max_length=100)
 
-
-class ArticleEvaluation(models.Model):
-    evaluation = models.CharField(max_length=150, blank=False)
+    def __str__(self):
+        return str(self.area)
 
 
 class Article(models.Model):
-    title = models.CharField(max_length=150, blank=False)
+    title: models.CharField = models.CharField(max_length=150, blank=False)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
-
-    keywords = models.CharField(null=True, blank=True, max_length=300)
     mcc = models.ForeignKey(MCC, on_delete=models.CASCADE)
-    evaluation = models.ForeignKey(ArticleEvaluation, on_delete=models.CASCADE, blank=True, null=True)
+    keywords = models.CharField(null=True, blank=True, max_length=300)
+    evaluation = models.CharField(blank=True, null=True, max_length=100)
+
+    def __str__(self):
+        return str(self.title)
 
 
 class File(models.Model):
@@ -57,13 +58,8 @@ class Participation(models.Model):
     class Meta:
         unique_together = ['author', 'article']
 
-
-class State(models.Model):
-    state = models.CharField(max_length=50)
-
-
-class Evaluation(models.Model):
-    evaluation = models.CharField(max_length=50)
+    def __str__(self):
+        return f'{self.author} in {self.article}'
 
 
 class Referee(models.Model):
@@ -75,11 +71,17 @@ class Referee(models.Model):
 class ArticleInReview(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     referee = models.ForeignKey(Referee, on_delete=models.CASCADE)
-    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, default=1)
-    state = models.ForeignKey(State, on_delete=models.CASCADE, default=3)
+    evaluation = models.CharField(default='', max_length=100)
+    state = models.CharField(default='', max_length=100)
 
     round = models.IntegerField(null=True, blank=True, default=1)
     description = models.FileField(null=True, blank=True)
 
     start_date = models.DateField(null=True)
     final_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ['referee', 'article', 'round']
+
+    def __str__(self):
+        return f'{self.referee} Reviewing {self.article} in round {self.round}'

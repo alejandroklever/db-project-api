@@ -22,3 +22,6 @@ def populate():
          password='adminrc1234.',
          is_superuser=True
          ).save()
+
+    for i, user in enumerate(User.objects.all()):
+        Author(user=user, institution='Universidad de la Habana', ORCID=i).save()
