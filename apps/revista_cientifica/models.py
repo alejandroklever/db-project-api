@@ -1,3 +1,5 @@
+import os
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
@@ -23,18 +25,18 @@ class MCC(models.Model):
 
 class Article(models.Model):
     title: models.CharField = models.CharField(max_length=150, blank=False)
-    start_date = models.DateField(null=True, blank=True)
-    end_date = models.DateField(null=True, blank=True)
     mcc = models.ForeignKey(MCC, on_delete=models.CASCADE)
     keywords = models.CharField(null=True, blank=True, max_length=300)
     evaluation = models.CharField(blank=True, null=True, max_length=100)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return str(self.title)
 
 
 class File(models.Model):
-    file = models.FileField(null=False, upload_to='media/', blank=False)
+    file = models.FileField(null=False, upload_to=os.path.join(os.getcwd(), 'media'), blank=False)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     file_name = models.CharField(max_length=150)
     date = models.DateTimeField(default=now, blank=True, null=True)

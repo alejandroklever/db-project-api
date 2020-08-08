@@ -1,69 +1,71 @@
-from rest_framework.viewsets import ModelViewSet
-from .serializers import *
-from .models import *
-from rest_framework import generics
-from rest_framework import filters
+import os
+
 # For Downloading Files
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.http import HttpResponse, Http404
-import os
+from rest_framework import filters
+from rest_framework.viewsets import ModelViewSet
+
+import apps.revista_cientifica.models as models
+import apps.revista_cientifica.serializers as serializers
 
 
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = serializers.UserSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['^username', '^first_name', '^last_name']
 
 
 class AuthorViewSet(ModelViewSet):
-    queryset = Author.objects.all()
-    serializer_class = AuthorSerializer
+    queryset = models.Author.objects.all()
+    serializer_class = serializers.AuthorSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['^user__username', '^user__first_name', '^user__last_name']
 
 
 class NotificationViewSet(ModelViewSet):
-    queryset = Notification.objects.all()
-    serializer_class = NotificationSerializer
+    queryset = models.Notification.objects.all()
+    serializer_class = serializers.NotificationSerializer
 
 
 class MCCViewSet(ModelViewSet):
-    queryset = MCC.objects.all()
-    serializer_class = MCCSerializer
+    queryset = models.MCC.objects.all()
+    serializer_class = serializers.MCCSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['^id', '^area']
 
 
 class ArticleViewSet(ModelViewSet):
-    queryset = Article.objects.all()
-    serializer_class = ArticleSerializer
+    queryset = models.Article.objects.all()
+    serializer_class = serializers.ArticleSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['^title', '^keywords', '^author__user__username']
 
 
 class ParticipationViewSet(ModelViewSet):
-    queryset = Participation.objects.all()
-    serializer_class = ParticipationSerializer
+    queryset = models.Participation.objects.all()
+    serializer_class = serializers.ParticipationSerializer
 
 
 class RefereeViewSet(ModelViewSet):
-    queryset = Referee.objects.all()
-    serializer_class = RefereeSerializer
+    queryset = models.Referee.objects.all()
+    serializer_class = serializers.RefereeSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['^user__username', '^user__first_name', '^user__last_name']
 
 
 class ArticleInReviewViewSet(ModelViewSet):
-    queryset = ArticleInReview.objects.all()
-    serializer_class = ArticleSerializer
+    queryset = models.ArticleInReview.objects.all()
+    serializer_class = serializers.ArticleSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['^article__title', '^referee__user__username']
 
 
 class FileViewSet(ModelViewSet):
-    queryset = File.objects.all()
-    serializer_class = FileSerializer
+    queryset = models.File.objects.all()
+    serializer_class = serializers.FileSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['^file_name', '^article__title']
 
