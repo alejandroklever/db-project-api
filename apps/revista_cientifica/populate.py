@@ -1,8 +1,10 @@
 import random
+from typing import List
 
 from apps.revista_cientifica.models import *
 
-MCCs = [MCC(area=s, id=s) for s in [f'mcc {i}' for i in range(25)]]
+NUMBER_OF_ARTICLES = 25
+MCCs = [MCC(area=s, id=s) for s in [f'mcc {i}' for i in range(NUMBER_OF_ARTICLES)]]
 
 
 def populate():
@@ -54,19 +56,19 @@ def populate():
          password='qwer1234.'
          ).save()
 
-    indexes = []
+    indexes: List[int] = []
+    authors: List[Author] = []
     for i, user in enumerate(User.objects.all()):
         indexes.append(i)
-        Author(user=user, institution='Universidad de la Habana', ORCID=i).save()
+        authors.append(Author(user=user, institution='Universidad de la Habana', ORCID=i))
+        authors[-1].save()
 
-    for i in range(25):
+    for i in range(NUMBER_OF_ARTICLES):
         title = f'Article {i}'
         article = Article(title=title, mcc=MCCs[i], keywords=f'Foo {i}', evaluation='-')
         article.save()
 
-        authors = list(Author.objects.all())
         random.shuffle(indexes)
-
-        for j in range(3):
+        for j in range(random.randrange(1, len(authors))):
             author = authors[indexes[j]]
             Participation(author=author, article=article).save()

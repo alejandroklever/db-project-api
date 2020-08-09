@@ -1,3 +1,4 @@
+from django.urls import path
 from rest_framework import routers
 
 from .viewsets import (UserViewSet, AuthorViewSet, ArticleViewSet, NotificationViewSet, FileViewSet, MCCViewSet,
@@ -14,4 +15,8 @@ router.register('participation', ParticipationViewSet)
 router.register('referee', RefereeViewSet)
 router.register('article_in_review', ArticleViewSet)
 
-urlpatterns = router.urls
+urlpatterns = (
+    router.urls + [
+
+    ]
+)

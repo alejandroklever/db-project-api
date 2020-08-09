@@ -9,12 +9,19 @@ https://docs.djangoproject.com/en/3.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
-
+import enum
 import os
+
+
+class DB(enum.Enum):
+    Sqlite3 = enum.auto()
+    Postgres = enum.auto()
+
+
+DB_ENGINE = DB.Postgres
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
@@ -26,7 +33,6 @@ SECRET_KEY = '_79%ijw92t2=r(un=$wg#+sfobnqser2by(g+(z=&n31==0-tj'
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -73,17 +79,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'api.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    # }
-
-    'default': {
+engine_config = {
+    DB.Postgres: {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'revista_cientifica',
         'USER': 'postgres',
@@ -91,8 +91,15 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '5432'
     },
+    DB.Sqlite3: {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
 }
 
+DATABASES = {
+    'default': engine_config[DB_ENGINE]
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -112,7 +119,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
@@ -125,7 +131,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
