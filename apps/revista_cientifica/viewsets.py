@@ -4,18 +4,44 @@ import os
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import HttpResponse, Http404
-from rest_framework import filters
-from rest_framework.viewsets import ModelViewSet
+from django.shortcuts import get_object_or_404
+from rest_framework import filters, mixins, status
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.response import Response
 
 import apps.revista_cientifica.models as models
 import apps.revista_cientifica.serializers as serializers
 
 
-class UserViewSet(ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = serializers.UserSerializer
+class UserViewSet(mixins.CreateModelMixin,
+                  mixins.ListModelMixin,
+                  GenericViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['^username', '^first_name', '^last_name']
+    serializer_class = serializers.CreateUserSerializer
+    queryset = User.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        self.queryset = User.objects.all()
+        serializer = serializers.UserReadOnlySerializer(self.queryset, many=True)
+        return Response(serializer.data)
+
+
+class DetailUserViewSet(mixins.DestroyModelMixin,
+                        GenericViewSet):
+    serializer_class = serializers.DetailUserSerializer
+    queryset = User.objects.all()
+
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        user = get_object_or_404(self.queryset, pk=pk)
+        serializer = serializers.UserReadOnlySerializer(user)
+        return Response(serializer.data)
+
+
+class UpdateUserViewSet(mixins.UpdateModelMixin,
+                        GenericViewSet):
+    serializer_class = serializers.UpdateUserSerializer
+    queryset = User.objects.all()
 
 
 class AuthorViewSet(ModelViewSet):
@@ -68,6 +94,23 @@ class FileViewSet(ModelViewSet):
     serializer_class = serializers.FileSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['^file_name', '^article__title']
+
+    def destroy(self, request, *args, **kwargs):
+        f = get_object_or_404(self.queryset, pk=kwargs['pk'])
+        path = os.path.join(settings.BASE_DIR, f.file.name)
+        os.remove(path)
+        f.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def update(self, request, *args, **kwargs):
+        f = get_object_or_404(self.queryset, pk=kwargs['pk'])
+        path = os.path.join(settings.BASE_DIR, f.file.name)
+        try:
+            response = super().update(request, *args, **kwargs)
+            os.remove(path)
+            return response
+        except Exception as e:
+            raise e
 
 
 def download_file(request, path: str) -> HttpResponse:

@@ -18,16 +18,49 @@ class UserReadOnlyField(RelationFieldJSONRepresentation):
     representation_fields = ['id', 'username', 'first_name', 'last_name', 'is_superuser']
 
 
-class UserSerializer(ModelSerializer):
+class UserReadOnlySerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser']
+        read_only_fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser']
 
 
-class UserFullInfoSerializer(ModelSerializer):
+class CreateUserSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ['username', 'email', 'password']
+
+    def create(self, validated_data):
+        user = User(
+            email=validated_data['email'],
+            username=validated_data['username']
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
+
+
+class DetailUserSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name']
+
+
+class UpdateUserSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'email', 'first_name', 'last_name']
+
+    def update(self, instance, validated_data):
+        user = instance
+        user.username = validated_data['username']
+        user.set_password(validated_data['password'])
+        user.email = validated_data['email']
+        user.first_name = validated_data['first_name']
+        user.last_name = validated_data['last_name']
+        user.save()
+        user.password = ''
+        return user
 
 
 class AuthorSerializer(ModelSerializer):
@@ -35,6 +68,7 @@ class AuthorSerializer(ModelSerializer):
 
     class Meta:
         model = Author
+        fields = '__all__'
         exclude = ['articles', ]
 
 

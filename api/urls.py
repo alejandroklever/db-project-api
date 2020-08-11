@@ -15,8 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from apps.revista_cientifica.viewsets import download_file
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('revista.cientifica/api/v1/', include('apps.revista_cientifica.urls'))
+    path('revista.cientifica/api/v1/', include('apps.revista_cientifica.urls')),
+    path('apps/revista_cientifica/media/<str:path>', download_file, name='download file')
 ]
