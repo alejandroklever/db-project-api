@@ -1,9 +1,8 @@
 import os
 
-# For Downloading Files
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, status
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
@@ -11,6 +10,7 @@ from rest_framework.response import Response
 
 import apps.revista_cientifica.models as models
 import apps.revista_cientifica.serializers as serializers
+import apps.revista_cientifica.filters as customfilters
 
 
 class UserViewSet(mixins.CreateModelMixin,
@@ -23,7 +23,7 @@ class UserViewSet(mixins.CreateModelMixin,
 
     def list(self, request, *args, **kwargs):
         self.queryset = User.objects.all()
-        serializer = serializers.UserReadOnlySerializer(self.queryset, many=True)
+        serializer = serializers.UserReadOnlyFieldSerializer(self.queryset, many=True)
         return Response(serializer.data)
 
 
@@ -34,7 +34,7 @@ class DetailUserViewSet(mixins.DestroyModelMixin,
 
     def retrieve(self, request, pk=None, *args, **kwargs):
         user = get_object_or_404(self.queryset, pk=pk)
-        serializer = serializers.UserReadOnlySerializer(user)
+        serializer = serializers.UserReadOnlyFieldSerializer(user)
         return Response(serializer.data)
 
 
@@ -42,6 +42,34 @@ class UpdateUserViewSet(mixins.UpdateModelMixin,
                         GenericViewSet):
     serializer_class = serializers.UpdateUserSerializer
     queryset = User.objects.all()
+
+
+class LoginUserViewSet(mixins.ListModelMixin,
+                       GenericViewSet):
+    serializer_class = serializers.LoginUserSerializer
+    queryset = User.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        user = None
+
+        if 'email' in request.query_params.keys():
+            user = User.objects.get(email=request.query_params['email'])
+        if 'username' in request.query_params.keys():
+            user = User.objects.get(username=request.query_params['username'])
+        if 'id' in request.query_params.keys():
+            user = User.objects.get(id=request.query_params['id'])
+        if user is None or 'password' not in request.query_params.keys():
+            return HttpResponseBadRequest()
+        if user.check_password(request.query_params['password']):
+            return Response({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'is_superuser': user.is_superuser,
+                'is_referee': True if len(models.Referee.objects.filter(user=user)) >= 1 else False
+            })
+        else:
+            return Response({'incorrect Password'})
 
 
 class AuthorViewSet(ModelViewSet):
@@ -73,6 +101,19 @@ class ArticleViewSet(ModelViewSet):
 class ParticipationViewSet(ModelViewSet):
     queryset = models.Participation.objects.all()
     serializer_class = serializers.ParticipationSerializer
+    filter_backends = [customfilters.ParticipationFilterBackend]
+
+    def retrieve(self, request, *args, **kwargs):
+        self.serializer_class = serializers.ParticipationReadOnlyFieldSerializer
+        out = super().retrieve(request, *args, **kwargs)
+        self.serializer_class = serializers.ParticipationSerializer
+        return out
+
+    def list(self, request, *args, **kwargs):
+        self.serializer_class = serializers.ParticipationReadOnlyFieldSerializer
+        out = super().list(request, *args, **kwargs)
+        self.serializer_class = serializers.ParticipationSerializer
+        return out
 
 
 class RefereeViewSet(ModelViewSet):
@@ -84,9 +125,20 @@ class RefereeViewSet(ModelViewSet):
 
 class ArticleInReviewViewSet(ModelViewSet):
     queryset = models.ArticleInReview.objects.all()
-    serializer_class = serializers.ArticleSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['^article__title', '^referee__user__username']
+    serializer_class = serializers.ArticleInReviewSerializer
+    filter_backends = [customfilters.ArticleInReviewFilterBackend]
+
+    def retrieve(self, request, *args, **kwargs):
+        self.serializer_class = serializers.ArticleInReviewReadOnlyFieldSerializer
+        out = super().retrieve(request, *args, **kwargs)
+        self.serializer_class = serializers.ParticipationSerializer
+        return out
+
+    def list(self, request, *args, **kwargs):
+        self.serializer_class = serializers.ArticleInReviewReadOnlyFieldSerializer
+        out = super().list(request, *args, **kwargs)
+        self.serializer_class = serializers.ParticipationSerializer
+        return out
 
 
 class FileViewSet(ModelViewSet):

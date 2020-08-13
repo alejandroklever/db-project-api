@@ -18,7 +18,28 @@ class UserReadOnlyField(RelationFieldJSONRepresentation):
     representation_fields = ['id', 'username', 'first_name', 'last_name', 'is_superuser']
 
 
-class UserReadOnlySerializer(ModelSerializer):
+class ArticleReadOnlyField(RelationFieldJSONRepresentation):
+    representation_fields = ['id', 'title', 'keywords', 'evaluation', 'start_date', 'end_date']
+
+
+class AuthorReadOnlyField(RelationFieldJSONRepresentation):
+    representation_fields = ['id', 'institution', 'ORCID']
+    user_representation_fields = ['id', 'email', 'username', 'first_name', 'last_name']
+
+    def to_representation(self, value):
+        d = value.__dict__
+        d1 = value.user.__dict__
+        dic = {field: d[field] for field in self.representation_fields}
+        dic2 = {field: d1[field] for field in self.user_representation_fields}
+        dic['user'] = dic2
+        return dic
+
+
+class RefereeReadOnlyField(AuthorReadOnlyField):
+    representation_fields = ['id']
+
+
+class UserReadOnlyFieldSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser']
@@ -63,6 +84,12 @@ class UpdateUserSerializer(ModelSerializer):
         return user
 
 
+class LoginUserSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'username', 'password']
+
+
 class AuthorSerializer(ModelSerializer):
     user = UserReadOnlyField(read_only=True)
 
@@ -85,6 +112,7 @@ class MCCSerializer(ModelSerializer):
 
 
 class ArticleSerializer(ModelSerializer):
+
     class Meta:
         model = Article
         fields = '__all__'
@@ -93,6 +121,15 @@ class ArticleSerializer(ModelSerializer):
 class FileSerializer(ModelSerializer):
     class Meta:
         model = File
+        fields = '__all__'
+
+
+class ParticipationReadOnlyFieldSerializer(ModelSerializer):
+    author = AuthorReadOnlyField(read_only=True)
+    article = ArticleReadOnlyField(read_only=True)
+
+    class Meta:
+        model = Participation
         fields = '__all__'
 
 
@@ -105,6 +142,15 @@ class ParticipationSerializer(ModelSerializer):
 class RefereeSerializer(ModelSerializer):
     class Meta:
         model = Referee
+        fields = '__all__'
+
+
+class ArticleInReviewReadOnlyFieldSerializer(ModelSerializer):
+    article = ArticleReadOnlyField(read_only=True)
+    referee = RefereeReadOnlyField(read_only=True)
+
+    class Meta:
+        model = ArticleInReview
         fields = '__all__'
 
 
