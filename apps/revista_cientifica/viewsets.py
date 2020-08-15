@@ -11,6 +11,9 @@ from rest_framework.response import Response
 import apps.revista_cientifica.models as models
 import apps.revista_cientifica.serializers as serializers
 import apps.revista_cientifica.filters as customfilters
+from apps.revista_cientifica.notifications_maker import NotificationMaker
+
+notification_maker = NotificationMaker()
 
 
 class UserViewSet(mixins.CreateModelMixin,
@@ -97,6 +100,23 @@ class ArticleViewSet(ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['^title', '^keywords', '^author__user__username']
 
+    def create(self, request, *args, **kwargs):
+        result = super().create(request, args, kwargs)
+        if result.status_code == 201:
+            notification_maker.new_article(result.data['id'])
+        return result
+
+    def update(self, request, *args, **kwargs):
+        previous_evaluation = models.Article.objects.get(id=kwargs['pk']).evaluation
+        result = super().update(request, args, kwargs)
+        if result.status_code == 200:
+            try:
+                evaluation = request.data['evaluation']
+                notification_maker.updated_article(result.data['id'], previous_evaluation)
+            except KeyError:
+                pass
+        return result
+
 
 class ParticipationViewSet(ModelViewSet):
     queryset = models.Participation.objects.all()
@@ -115,6 +135,12 @@ class ParticipationViewSet(ModelViewSet):
         self.serializer_class = serializers.ParticipationSerializer
         return out
 
+    def create(self, request, *args, **kwargs):
+        result = super().create(request, args, kwargs)
+        if result.status_code == 201:
+            notification_maker.new_participation(result.data['id'])
+        return result
+
 
 class RefereeViewSet(ModelViewSet):
     queryset = models.Referee.objects.all()
@@ -131,15 +157,27 @@ class ArticleInReviewViewSet(ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = serializers.ArticleInReviewReadOnlyFieldSerializer
         out = super().retrieve(request, *args, **kwargs)
-        self.serializer_class = serializers.ParticipationSerializer
+        self.serializer_class = serializers.ArticleInReviewSerializer
         return out
 
     def list(self, request, *args, **kwargs):
         self.serializer_class = serializers.ArticleInReviewReadOnlyFieldSerializer
         out = super().list(request, *args, **kwargs)
-        self.serializer_class = serializers.ParticipationSerializer
+        self.serializer_class = serializers.ArticleInReviewSerializer
         return out
 
+    def create(self, request, *args, **kwargs):
+        result = super().create(request, args, kwargs)
+        if result.status_code == 201:
+            notification_maker.new_review(result.data['id'])
+        return result
+
+    def update(self, request, *args, **kwargs):
+        previous_state = models.ArticleInReview.objects.get(id=kwargs['pk']).state
+        result = super().update(request, args, kwargs)
+        if result.status_code == 200:
+            notification_maker.updated_review(result.data['id'], previous_state)
+        return result
 
 class FileViewSet(ModelViewSet):
     queryset = models.File.objects.all()

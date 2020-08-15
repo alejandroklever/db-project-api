@@ -8,8 +8,8 @@ from django.utils.timezone import now
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.CharField(max_length=500, null=False, blank=False)
-    ref = models.CharField(max_length=300, null=False, blank=False)
     date = models.DateTimeField(default=now, null=False, blank=True)
+    checked = models.BooleanField(default=False, null=False, blank=True)
 
     def __str__(self):
         return f'destiny: {self.user}\n content: {self.content}'
@@ -27,6 +27,7 @@ class Article(models.Model):
     title: models.CharField = models.CharField(max_length=150, blank=False)
     mcc = models.ForeignKey(MCC, on_delete=models.CASCADE)
     keywords = models.CharField(null=True, blank=True, max_length=300)
+
     evaluation = models.CharField(blank=True, null=True, max_length=100)
     start_date = models.DateField(null=True, blank=True, default=now)
     end_date = models.DateField(null=True, blank=True)
@@ -79,13 +80,13 @@ class Referee(models.Model):
 class ArticleInReview(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     referee = models.ForeignKey(Referee, on_delete=models.CASCADE)
-    evaluation = models.CharField(default='', max_length=100)
+    evaluation = models.CharField(default='', blank=True, null=True, max_length=100)
     state = models.CharField(default='', max_length=100)
 
     round = models.IntegerField(null=True, blank=True, default=1)
     description = models.FileField(null=True, blank=True)
 
-    start_date = models.DateField(null=True)
+    start_date = models.DateField(default=now, null=True, blank=True)
     final_date = models.DateField(null=True, blank=True)
 
     class Meta:
