@@ -53,7 +53,7 @@ The editor will contact you soon for the paper proofs of your article '''
     def new_file(self, id_article):
         article = models.Article.objects.get(id=id_article)
         authors = self.__get_authors_for_article(article)
-        text = f'''File versions for article: "{article.title}"{authors} have been updates'''
+        text = f'''File versions for article: "{article.title}"{authors} have been updated'''
         self.notifier.notify_super_users(text)
         self.notifier.notify_article_referees(article, text)
 
@@ -62,7 +62,8 @@ The editor will contact you soon for the paper proofs of your article '''
         article = participation.article
         author = participation.author.user
         self.notifier.notify_user(author, f'''We have received the paper "{article.title}". 
-We are sending to the referees for their consideration.''')
+We are sending to the referees for their consideration.
+We expect their response in 3 months.''')
 
     def new_review(self, id_review):
         review = models.ArticleInReview.objects.get(id=id_review)
@@ -70,10 +71,17 @@ We are sending to the referees for their consideration.''')
         authors = self.__get_authors_for_article(article)
         text_assigment = f'''You have been assigned as referee of the paper "{article.title}"{authors}.
  We expect your referee report in 3 months.'''
-        text_petition = f'''You been asked to revise the paper "{article.title}"{authors}.
- Please let us know as soon as possible if you agree.'''
+        text_first_petition = f'''You been asked to revise the paper "{article.title}"{authors}.
+ Please let us know as soon as possible if you agree.
+ We expect your referee report in 3 months.'''
+        text_follow_petition = f'''Herein I am sending you the revised version of the paper "{article.title}"{authors}.
+ Please, let us know if you agree to revise it.
+ We expect your report within 3 months.'''
         if review.state == 'Esperando Respuesta':
-            self.notifier.notify_user(review.referee.user, text_petition)
+            if review.round == 1:
+                self.notifier.notify_user(review.referee.user, text_first_petition)
+            else:
+                self.notifier.notify_user(review.referee.user, text_follow_petition)
         if review.state == 'Calificando':
             self.notifier.notify_user(review.referee.user, text_assigment)
 
