@@ -8,7 +8,7 @@ from django.utils.timezone import now
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.CharField(max_length=500, null=False, blank=False)
-    date = models.DateTimeField(default=now, null=False, blank=True)
+    date = models.DateTimeField(default=now, blank=True)
     checked = models.BooleanField(default=False, null=False, blank=True)
 
     def __str__(self):
@@ -29,8 +29,8 @@ class Article(models.Model):
     keywords = models.CharField(null=True, blank=True, max_length=300)
 
     evaluation = models.CharField(blank=True, null=True, max_length=100)
-    start_date = models.DateField(null=True, blank=True, default=now)
-    end_date = models.DateField(null=True, blank=True)
+    start_date = models.DateTimeField(blank=True, default=now)
+    end_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return str(self.title)
@@ -40,7 +40,7 @@ class File(models.Model):
     file = models.FileField(null=False, upload_to='apps/revista_cientifica/media', blank=False)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     file_name = models.CharField(max_length=150)
-    date = models.DateTimeField(default=now, blank=True, null=True)
+    date = models.DateTimeField(blank=True, default=now)
 
     def __str__(self):
         return f'{self.file_name} from {self.article}'
@@ -86,8 +86,8 @@ class ArticleInReview(models.Model):
     round = models.IntegerField(null=True, blank=True, default=1)
     description = models.FileField(null=True, blank=True)
 
-    start_date = models.DateField(default=now, null=True, blank=True)
-    final_date = models.DateField(null=True, blank=True)
+    start_date = models.DateTimeField(default=now, blank=True)
+    final_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ['referee', 'article', 'round']
