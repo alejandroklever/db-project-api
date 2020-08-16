@@ -12,7 +12,7 @@ import apps.revista_cientifica.models as models
 import apps.revista_cientifica.serializers as serializers
 import apps.revista_cientifica.filters as customfilters
 from apps.revista_cientifica.notifications_maker import NotificationMaker
-
+from apps.revista_cientifica.document_maker import generate_document
 notification_maker = NotificationMaker()
 
 
@@ -179,6 +179,7 @@ class ArticleInReviewViewSet(ModelViewSet):
             notification_maker.updated_review(result.data['id'], previous_state)
         return result
 
+
 class FileViewSet(ModelViewSet):
     queryset = models.File.objects.all()
     serializer_class = serializers.FileSerializer
@@ -211,3 +212,15 @@ def download_file(request, path: str) -> HttpResponse:
             response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(file_path)
             return response
     raise Http404()
+
+
+def download_report(request, *args, **kwargs) -> HttpResponse:
+    id_notification = kwargs['pk']
+    notification = models.Notification.objects.get(id=id_notification)
+    author = models.Author.objects.get(user=notification.user)
+    file_path = generate_document(str(author), author.institution, notification.content, notification.date)
+    with open(file_path, 'rb') as fh:
+        response = HttpResponse(fh.read(), content_type="application/msword")
+        response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(file_path)
+        os.remove(file_path)
+        return response

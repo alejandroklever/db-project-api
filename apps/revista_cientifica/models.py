@@ -29,7 +29,7 @@ class Article(models.Model):
     keywords = models.CharField(null=True, blank=True, max_length=300)
 
     evaluation = models.CharField(blank=True, null=True, max_length=100)
-    start_date = models.DateTimeField(blank=True, default=now)
+
     end_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
@@ -86,7 +86,7 @@ class ArticleInReview(models.Model):
     round = models.IntegerField(null=True, blank=True, default=1)
     description = models.FileField(null=True, blank=True)
 
-    start_date = models.DateTimeField(default=now, blank=True)
+
     final_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
