@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer, RelatedField
 
-from .models import User, Author, Notification, MCC, Article, File, Participation, Referee, ArticleInReview
+from .models import (User, Author, Notification, MCC, Article, File, Participation, Referee, ArticleInReview)
 
 
 class RelationFieldJSONRepresentation(RelatedField):

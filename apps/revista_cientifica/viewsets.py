@@ -10,7 +10,7 @@ from rest_framework.response import Response
 
 import apps.revista_cientifica.models as models
 import apps.revista_cientifica.serializers as serializers
-import apps.revista_cientifica.filters as customfilters
+import apps.revista_cientifica.filters as custom_filters
 from apps.revista_cientifica.notifications_maker import NotificationMaker
 from apps.revista_cientifica.document_maker import generate_document
 
@@ -134,7 +134,7 @@ class ArticleViewSet(ModelViewSet):
 class ParticipationViewSet(ModelViewSet):
     queryset = models.Participation.objects.all()
     serializer_class = serializers.ParticipationSerializer
-    filter_backends = [customfilters.ParticipationFilterBackend]
+    filter_backends = [custom_filters.ParticipationFilterBackend]
 
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = serializers.ParticipationReadOnlyFieldSerializer
@@ -165,7 +165,7 @@ class RefereeViewSet(ModelViewSet):
 class ArticleInReviewViewSet(ModelViewSet):
     queryset = models.ArticleInReview.objects.all()
     serializer_class = serializers.ArticleInReviewSerializer
-    filter_backends = [customfilters.ArticleInReviewFilterBackend]
+    filter_backends = [custom_filters.ArticleInReviewFilterBackend]
 
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = serializers.ArticleInReviewReadOnlyFieldSerializer
