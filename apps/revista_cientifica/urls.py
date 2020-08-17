@@ -1,9 +1,8 @@
-from django.urls import path
 from rest_framework import routers
 
 from .viewsets import (UserViewSet, DetailUserViewSet, UpdateUserViewSet, AuthorViewSet,
                        ArticleViewSet, NotificationViewSet, FileViewSet, MCCViewSet,
-                       ParticipationViewSet,  RefereeViewSet,
+                       ParticipationViewSet, RefereeViewSet,
                        ArticleInReviewViewSet, LoginUserViewSet)
 
 router = routers.DefaultRouter()

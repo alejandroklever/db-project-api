@@ -1,5 +1,3 @@
-import os
-
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
@@ -20,7 +18,7 @@ class MCC(models.Model):
     area = models.CharField(max_length=100)
 
     def __str__(self):
-        return f'{self.id}: '+str(self.area)
+        return f'{self.id}: ' + str(self.area)
 
 
 class Article(models.Model):
@@ -85,7 +83,6 @@ class ArticleInReview(models.Model):
 
     round = models.IntegerField(null=True, blank=True, default=1)
     description = models.FileField(null=True, blank=True)
-
 
     final_date = models.DateTimeField(null=True, blank=True)
 
