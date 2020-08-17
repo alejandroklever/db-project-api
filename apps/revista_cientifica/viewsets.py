@@ -13,6 +13,7 @@ import apps.revista_cientifica.serializers as serializers
 import apps.revista_cientifica.filters as customfilters
 from apps.revista_cientifica.notifications_maker import NotificationMaker
 from apps.revista_cientifica.document_maker import generate_document
+
 notification_maker = NotificationMaker()
 
 
@@ -61,18 +62,30 @@ class LoginUserViewSet(mixins.ListModelMixin,
             user = User.objects.get(username=request.query_params['username'])
         if 'id' in request.query_params.keys():
             user = User.objects.get(id=request.query_params['id'])
-        if user is None or 'password' not in request.query_params.keys():
-            return HttpResponseBadRequest()
-        if user.check_password(request.query_params['password']):
+        if (user is not None and
+                'password' in request.query_params.keys() and
+                user.password == request.query_params['password']):
+            # get is faster than filter
+            try:
+                models.Referee.objects.get(user_id=user.id)
+                is_referee = True
+            except models.Referee.DoesNotExist:
+                is_referee = False
+                
             return Response({
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'is_superuser': user.is_superuser,
-                'is_referee': True if len(models.Referee.objects.filter(user=user)) >= 1 else False
-            })
+                'correct': True,
+                'body': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'is_superuser': user.is_superuser,
+                    'is_referee': is_referee
+                }})
         else:
-            return Response({'incorrect Password'})
+            return Response({
+                'correct': False,
+                'body': 'incorrect Password'
+            })
 
 
 class AuthorViewSet(ModelViewSet):
