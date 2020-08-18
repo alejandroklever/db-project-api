@@ -1,22 +1,14 @@
+from django.db.models import QuerySet
 from rest_framework.filters import BaseFilterBackend
 
 
 class GenericFilterBackend(BaseFilterBackend):
-    def filter_queryset(self, request, queryset, view):
-        dic = {}
-        for item in request.query_params.keys():
-            if item != 'many':
-                dic[item] = request.query_params[item]
-        many = True
-        if 'many' in request.query_params.keys():
-            many = False if request.query_params['many']=='False' else True
+    def filter_queryset(self, request, queryset: QuerySet, view):
+        dic = {item: request.query_params[item] for item in request.query_params if item != 'many'}
+        many = 'many' not in request.query_params or ('many' in request.query_params and
+                                                      request.query_params['many'] != 'false')
         try:
-            if many:
-                queryset = queryset.filter(**dic)
-            else:
-                queryset = queryset.get(**dic)
-        except Exception as e:
+            queryset = queryset.filter(**dic) if many else [queryset.get(**dic)]
+        except queryset.model.DoesNotExist:
             queryset = queryset.none()
         return queryset
-
-
