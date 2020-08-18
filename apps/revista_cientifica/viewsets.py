@@ -219,17 +219,6 @@ class FileViewSet(ModelViewSet):
             raise e
 
 
-class DetailAuthorFromUserViewSet(mixins.RetrieveModelMixin,
-                                  GenericViewSet):
-    serializer_class = serializers.AuthorSerializer
-    queryset = models.Author.objects.all()
-
-    def retrieve(self, request, pk=None, *args, **kwargs):
-        user = models.User.objects.get(id=pk)
-        author = models.Author.objects.get(user=user)
-        return super().retrieve(request, args, kwargs, pk=author.id)
-
-
 def download_file(request, path: str) -> HttpResponse:
     file_path = os.path.join(settings.BASE_DIR, 'apps', 'revista_cientifica', 'media', path)
     if os.path.exists(file_path):
