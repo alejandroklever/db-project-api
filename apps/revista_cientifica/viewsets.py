@@ -20,7 +20,7 @@ notification_maker = NotificationMaker()
 class UserViewSet(mixins.CreateModelMixin,
                   mixins.ListModelMixin,
                   GenericViewSet):
-    filter_backends = [custom_filters.UserFilterBackend, filters.SearchFilter]
+    filter_backends = [custom_filters.GenericFilterBackend, filters.SearchFilter]
     search_fields = ['^username', '^first_name', '^last_name']
     serializer_class = serializers.CreateUserSerializer
     queryset = User.objects.all()
@@ -92,26 +92,27 @@ class LoginUserViewSet(mixins.ListModelMixin,
 class AuthorViewSet(ModelViewSet):
     queryset = models.Author.objects.all()
     serializer_class = serializers.AuthorSerializer
-    filter_backends = [custom_filters.AuthorFilterBackend, filters.SearchFilter]
+    filter_backends = [custom_filters.GenericFilterBackend, filters.SearchFilter]
     search_fields = ['^user__username', '^user__first_name', '^user__last_name']
 
 
 class NotificationViewSet(ModelViewSet):
     queryset = models.Notification.objects.all()
     serializer_class = serializers.NotificationSerializer
+    filter_backends = [custom_filters.GenericFilterBackend]
 
 
 class MCCViewSet(ModelViewSet):
     queryset = models.MCC.objects.all()
     serializer_class = serializers.MCCSerializer
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [custom_filters.GenericFilterBackend, filters.SearchFilter]
     search_fields = ['^id', '^area']
 
 
 class ArticleViewSet(ModelViewSet):
     queryset = models.Article.objects.all()
     serializer_class = serializers.ArticleSerializer
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [custom_filters.GenericFilterBackend, filters.SearchFilter]
     search_fields = ['^title', '^keywords', '^author__user__username']
 
     def create(self, request, *args, **kwargs):
@@ -135,7 +136,7 @@ class ArticleViewSet(ModelViewSet):
 class ParticipationViewSet(ModelViewSet):
     queryset = models.Participation.objects.all()
     serializer_class = serializers.ParticipationSerializer
-    filter_backends = [custom_filters.ParticipationFilterBackend]
+    filter_backends = [custom_filters.GenericFilterBackend]
 
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = serializers.ParticipationReadOnlyFieldSerializer
@@ -159,14 +160,14 @@ class ParticipationViewSet(ModelViewSet):
 class RefereeViewSet(ModelViewSet):
     queryset = models.Referee.objects.all()
     serializer_class = serializers.RefereeSerializer
-    filter_backends = [custom_filters.RefereeFilterBackend, filters.SearchFilter]
+    filter_backends = [custom_filters.GenericFilterBackend, filters.SearchFilter]
     search_fields = ['^user__username', '^user__first_name', '^user__last_name']
 
 
 class ArticleInReviewViewSet(ModelViewSet):
     queryset = models.ArticleInReview.objects.all()
     serializer_class = serializers.ArticleInReviewSerializer
-    filter_backends = [custom_filters.ArticleInReviewFilterBackend]
+    filter_backends = [custom_filters.GenericFilterBackend]
 
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = serializers.ArticleInReviewReadOnlyFieldSerializer
@@ -197,7 +198,7 @@ class ArticleInReviewViewSet(ModelViewSet):
 class FileViewSet(ModelViewSet):
     queryset = models.File.objects.all()
     serializer_class = serializers.FileSerializer
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [custom_filters.GenericFilterBackend, filters.SearchFilter]
     search_fields = ['^file_name', '^article__title']
 
     def destroy(self, request, *args, **kwargs):
@@ -216,17 +217,6 @@ class FileViewSet(ModelViewSet):
             return response
         except Exception as e:
             raise e
-
-
-class DetailAuthorFromUserViewSet(mixins.RetrieveModelMixin,
-                                  GenericViewSet):
-    serializer_class = serializers.AuthorSerializer
-    queryset = models.Author.objects.all()
-
-    def retrieve(self, request, pk=None, *args, **kwargs):
-        user = models.User.objects.get(id=pk)
-        author = models.Author.objects.get(user=user)
-        return super().retrieve(request, args, kwargs, pk=author.id)
 
 
 def download_file(request, path: str) -> HttpResponse:
