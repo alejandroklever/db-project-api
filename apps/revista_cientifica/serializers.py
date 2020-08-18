@@ -19,7 +19,7 @@ class UserReadOnlyField(RelationFieldJSONRepresentation):
 
 
 class ArticleReadOnlyField(RelationFieldJSONRepresentation):
-    representation_fields = ['id', 'title', 'keywords', 'evaluation', 'start_date', 'end_date']
+    representation_fields = ['id', 'title', 'keywords', 'evaluation', 'end_date']
 
 
 class AuthorReadOnlyField(RelationFieldJSONRepresentation):
