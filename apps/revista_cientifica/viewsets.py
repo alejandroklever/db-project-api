@@ -20,7 +20,7 @@ notification_maker = NotificationMaker()
 class UserViewSet(mixins.CreateModelMixin,
                   mixins.ListModelMixin,
                   GenericViewSet):
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [custom_filters.UserFilterBackend, filters.SearchFilter]
     search_fields = ['^username', '^first_name', '^last_name']
     serializer_class = serializers.CreateUserSerializer
     queryset = User.objects.all()
@@ -91,7 +91,7 @@ class LoginUserViewSet(mixins.ListModelMixin,
 class AuthorViewSet(ModelViewSet):
     queryset = models.Author.objects.all()
     serializer_class = serializers.AuthorSerializer
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [custom_filters.AuthorFilterBackend, filters.SearchFilter]
     search_fields = ['^user__username', '^user__first_name', '^user__last_name']
 
 
@@ -158,7 +158,7 @@ class ParticipationViewSet(ModelViewSet):
 class RefereeViewSet(ModelViewSet):
     queryset = models.Referee.objects.all()
     serializer_class = serializers.RefereeSerializer
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [custom_filters.RefereeFilterBackend, filters.SearchFilter]
     search_fields = ['^user__username', '^user__first_name', '^user__last_name']
 
 
