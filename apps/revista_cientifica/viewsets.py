@@ -32,6 +32,7 @@ class UserViewSet(mixins.CreateModelMixin,
 
 
 class DetailUserViewSet(mixins.DestroyModelMixin,
+                        mixins.RetrieveModelMixin,
                         GenericViewSet):
     serializer_class = serializers.DetailUserSerializer
     queryset = User.objects.all()
@@ -215,6 +216,17 @@ class FileViewSet(ModelViewSet):
             return response
         except Exception as e:
             raise e
+
+
+class DetailAuthorFromUserViewSet(mixins.RetrieveModelMixin,
+                                  GenericViewSet):
+    serializer_class = serializers.AuthorSerializer
+    queryset = models.Author.objects.all()
+
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        user = models.User.objects.get(id=pk)
+        author = models.Author.objects.get(user=user)
+        return super().retrieve(request, args, kwargs, pk=author.id)
 
 
 def download_file(request, path: str) -> HttpResponse:
