@@ -9,7 +9,7 @@ class GenericFilterBackend(BaseFilterBackend):
                 dic[item] = request.query_params[item]
         many = True
         if 'many' in request.query_params.keys():
-            many = request.query_params['many']
+            many = False if request.query_params['many']=='False' else True
         try:
             if many:
                 queryset = queryset.filter(**dic)
