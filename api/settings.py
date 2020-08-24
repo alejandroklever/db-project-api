@@ -37,7 +37,8 @@ ALLOWED_HOSTS = []
 # Cors Headers
 
 CORS_ORIGIN_WHITELIST = [
-    "http://localhost:8080"
+    "http://localhost:8080",
+    "null"  # for testing
 ]
 
 # Application definition
@@ -106,6 +107,12 @@ engine_config = {
 
 DATABASES = {
     'default': engine_config[DB_ENGINE]
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': {
+        'rest_framework.permissions.IsAuthenticated',
+    }
 }
 
 # Password validation
