@@ -1,3 +1,4 @@
+from rest_framework.authtoken.models import Token
 from rest_framework.serializers import ModelSerializer, RelatedField
 
 from .models import (User, Author, Notification, MCC, Article, File, Participation, Referee, ArticleInReview)
@@ -52,12 +53,8 @@ class CreateUserSerializer(ModelSerializer):
         fields = ['username', 'email', 'password']
 
     def create(self, validated_data):
-        user = User(
-            email=validated_data['email'],
-            username=validated_data['username']
-        )
-        user.set_password(validated_data['password'])
-        user.save()
+        user = User.objects.create_user(**validated_data)
+        Token.objects.create(user=user)
         return user
 
 
@@ -111,7 +108,6 @@ class MCCSerializer(ModelSerializer):
 
 
 class ArticleSerializer(ModelSerializer):
-
     class Meta:
         model = Article
         fields = '__all__'

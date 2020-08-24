@@ -15,10 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework.authtoken.views import obtain_auth_token
+
 from apps.revista_cientifica.viewsets import download_file, download_report
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('auth/', obtain_auth_token),
     path('revista.cientifica/api/v1/', include('apps.revista_cientifica.urls')),
     path('apps/revista_cientifica/media/<str:path>', download_file, name='download file'),
     path('apps/revista_cientifica/report/<pk>', download_report, name='download report')
