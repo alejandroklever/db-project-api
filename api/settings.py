@@ -35,10 +35,10 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 # Cors Headers
+CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ORIGIN_WHITELIST = [
-    "http://localhost:8080",
-    "null"  # for testing
+    "http://localhost:8080"
 ]
 
 # Application definition
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'apps.revista_cientifica',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
     'corsheaders',
 ]
@@ -59,12 +60,12 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'api.urls'
@@ -109,12 +110,6 @@ DATABASES = {
     'default': engine_config[DB_ENGINE]
 }
 
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': {
-        'rest_framework.permissions.IsAuthenticated',
-    }
-}
-
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
@@ -155,5 +150,9 @@ STATIC_URL = '/static/'
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
+    'PAGE_SIZE': 10,
+    # 'DEFAULT_PERMISSION_CLASSES': {
+    #     'rest_framework.permissions.IsAuthenticated',
+    #     'rest_framework.permissions.BasePermission'
+    # }
 }

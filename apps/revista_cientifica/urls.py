@@ -1,25 +1,23 @@
+from django.urls import path
 from rest_framework import routers
 
-from .viewsets import (UserViewSet, DetailUserViewSet, UpdateUserViewSet, AuthorViewSet,
-                       ArticleViewSet, NotificationViewSet, FileViewSet, MCCViewSet,
-                       ParticipationViewSet, RefereeViewSet,
-                       ArticleInReviewViewSet, LoginUserViewSet)
+import apps.revista_cientifica.viewsets as viewsets
 
 router = routers.DefaultRouter()
-router.register('author', AuthorViewSet)
-router.register('article', ArticleViewSet)
-router.register('notification', NotificationViewSet)
-router.register('file', FileViewSet)
-router.register('mcc', MCCViewSet)
-router.register('participation', ParticipationViewSet)
-router.register('referee', RefereeViewSet)
-router.register('article_in_review', ArticleInReviewViewSet)
-router.register('user/update', UpdateUserViewSet, basename='update user')
-router.register('user/login', LoginUserViewSet, basename='login user')
-router.register('user', UserViewSet, basename='user')
-router.register('user', DetailUserViewSet, basename='user')
+router.register('author', viewsets.AuthorViewSet)
+router.register('article', viewsets.ArticleViewSet)
+router.register('notification', viewsets.NotificationViewSet)
+router.register('file', viewsets.FileViewSet)
+router.register('mcc', viewsets.MCCViewSet)
+router.register('participation', viewsets.ParticipationViewSet)
+router.register('referee', viewsets.RefereeViewSet)
+router.register('article_in_review', viewsets.ArticleInReviewViewSet)
+router.register('user', viewsets.UserViewSet, basename='user')
+router.register('user/update', viewsets.UpdateUserViewSet, basename='update user')
+# router.register('user', viewsets.DetailUserViewSet, basename='user')
 
 urlpatterns = (
     router.urls + [
+        path('auth/', viewsets.UserAuthView.as_view()),
     ]
 )

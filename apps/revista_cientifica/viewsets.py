@@ -1,92 +1,78 @@
 import os
 
 from django.conf import settings
-from django.contrib.auth.models import User
-from django.http import HttpResponse, Http404, HttpResponseBadRequest
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, status
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
+import apps.revista_cientifica.filters as custom_filters
 import apps.revista_cientifica.models as models
 import apps.revista_cientifica.serializers as serializers
-import apps.revista_cientifica.filters as custom_filters
-from apps.revista_cientifica.notifications_maker import NotificationMaker
 from apps.revista_cientifica.document_maker import generate_document
+from apps.revista_cientifica.notifications_maker import NotificationMaker
 
 notification_maker = NotificationMaker()
 
 
+class UserAuthView(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        response = super(UserAuthView, self).post(request, *args, **kwargs)
+        token = response.data['token']
+        user = Token.objects.get(key=token).user
+        auth_info, _ = models.Author.objects.get_or_create(user_id=user.id)
+
+        try:
+            referee_info = models.Referee.objects.get(user_id=user.id)
+        except models.Referee.DoesNotExist:
+            referee_info = None
+
+        response.data.update({
+            'id': user.id,
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'is_superuser': user.is_superuser,
+            'author_info': {
+                'id': auth_info.id,
+                'institution': auth_info.institution,
+                'orcid': auth_info.orcid
+            },
+            'referee_info': {
+                'id': referee_info.id,
+                'speciality': referee_info.speciality
+            } if referee_info is not None else None
+        })
+        return response
+
+
 class UserViewSet(mixins.CreateModelMixin,
+                  mixins.RetrieveModelMixin,
                   mixins.ListModelMixin,
                   GenericViewSet):
     filter_backends = [custom_filters.GenericFilterBackend, filters.SearchFilter]
     search_fields = ['^username', '^first_name', '^last_name']
-    serializer_class = serializers.CreateUserSerializer
-    queryset = User.objects.all()
+    serializer_class = serializers.UserSerializer
+    queryset = models.User.objects.all()
 
-    def list(self, request, *args, **kwargs):
-        self.queryset = User.objects.all()
-        serializer = serializers.UserReadOnlyFieldSerializer(self.queryset, many=True)
+    def retrieve(self, request, *args, **kwargs):
+        user = models.User.objects.get(id=kwargs['pk'])
+        serializer = serializers.UserReadOnlySerializer(user)
         return Response(serializer.data)
 
-
-class DetailUserViewSet(mixins.DestroyModelMixin,
-                        mixins.RetrieveModelMixin,
-                        GenericViewSet):
-    serializer_class = serializers.DetailUserSerializer
-    queryset = User.objects.all()
-
-    def retrieve(self, request, pk=None, *args, **kwargs):
-        user = get_object_or_404(self.queryset, pk=pk)
-        serializer = serializers.UserReadOnlyFieldSerializer(user)
+    def list(self, request, *args, **kwargs):
+        serializer = serializers.UserReadOnlySerializer(self.queryset, many=True)
         return Response(serializer.data)
 
 
 class UpdateUserViewSet(mixins.UpdateModelMixin,
                         GenericViewSet):
     serializer_class = serializers.UpdateUserSerializer
-    queryset = User.objects.all()
-
-
-class LoginUserViewSet(mixins.ListModelMixin,
-                       GenericViewSet):
-    serializer_class = serializers.LoginUserSerializer
-    queryset = User.objects.all()
-
-    def list(self, request, *args, **kwargs):
-        user = None
-
-        if 'email' in request.query_params.keys():
-            user = User.objects.get(email=request.query_params['email'])
-        if 'username' in request.query_params.keys():
-            user = User.objects.get(username=request.query_params['username'])
-        if 'id' in request.query_params.keys():
-            user = User.objects.get(id=request.query_params['id'])
-        if (user is not None and
-                'password' in request.query_params.keys() and
-                user.password == request.query_params['password']):
-            # get is faster than filter
-            try:
-                models.Referee.objects.get(user_id=user.id)
-                is_referee = True
-            except models.Referee.DoesNotExist:
-                is_referee = False
-                
-            return Response({
-                'correct': True,
-                'body': {
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'is_superuser': user.is_superuser,
-                    'is_referee': is_referee
-                }})
-        else:
-            return Response({
-                'correct': False,
-                'body': 'incorrect Password'
-            })
+    queryset = models.User.objects.all()
 
 
 class AuthorViewSet(ModelViewSet):
@@ -124,12 +110,8 @@ class ArticleViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         previous_evaluation = models.Article.objects.get(id=kwargs['pk']).evaluation
         result = super().update(request, args, kwargs)
-        if result.status_code == 200:
-            try:
-                evaluation = request.data['evaluation']
-                notification_maker.updated_article(result.data['id'], previous_evaluation)
-            except KeyError:
-                pass
+        if result.status_code == 200 and 'evaluation' in request.data:
+            notification_maker.updated_article(result.data['id'], previous_evaluation)
         return result
 
 
@@ -229,8 +211,8 @@ def download_file(request, path: str) -> HttpResponse:
     raise Http404()
 
 
-def download_report(request, *args, **kwargs) -> HttpResponse:
-    id_notification = kwargs['pk']
+def download_report(request, pk: int) -> HttpResponse:
+    id_notification = pk
     notification = models.Notification.objects.get(id=id_notification)
     author = models.Author.objects.get(user=notification.user)
     file_path = generate_document(str(author), author.institution, notification.content, notification.date)

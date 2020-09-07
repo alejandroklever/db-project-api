@@ -48,7 +48,7 @@ class Author(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     institution = models.CharField(max_length=200, null=True, blank=True)
     articles = models.ManyToManyField(Article, through='Participation')
-    ORCID = models.BigIntegerField(unique=True, null=True, blank=False, default=1000000000000000)
+    orcid = models.BigIntegerField(unique=True, null=True, blank=False, default=1000000000000000)
 
     def __str__(self):
         return f'{self.user}'
