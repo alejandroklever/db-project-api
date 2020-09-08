@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'corsheaders',
+    'background_task',
 ]
 
 MIDDLEWARE = [
@@ -109,11 +110,11 @@ DATABASES = {
     'default': engine_config[DB_ENGINE]
 }
 
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': {
-        'rest_framework.permissions.IsAuthenticated',
-    }
-}
+# REST_FRAMEWORK = {
+#     'DEFAULT_PERMISSION_CLASSES': {
+#         'rest_framework.permissions.IsAuthenticated',
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
