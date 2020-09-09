@@ -24,5 +24,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('revista.cientifica/api/v1/', include('apps.revista_cientifica.urls')),
     path('apps/revista_cientifica/media/<str:path>', download_file, name='download file'),
-    path('apps/revista_cientifica/report/<pk:int>', download_report, name='download report'),
+    path('apps/revista_cientifica/report/<int:pk>', download_report, name='download report'),
 ]

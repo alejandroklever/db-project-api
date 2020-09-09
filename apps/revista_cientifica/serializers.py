@@ -146,3 +146,9 @@ class ArticleInReviewSerializer(ModelSerializer):
     class Meta:
         model = ArticleInReview
         fields = '__all__'
+
+
+class TokenSerializer(ModelSerializer):
+    class Meta:
+        model = Token
+        fields = '__all__'

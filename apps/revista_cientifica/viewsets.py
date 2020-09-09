@@ -23,30 +23,7 @@ class UserAuthView(ObtainAuthToken):
         response = super(UserAuthView, self).post(request, *args, **kwargs)
         token = response.data['token']
         user = Token.objects.get(key=token).user
-        auth_info, _ = models.Author.objects.get_or_create(user_id=user.id)
-
-        try:
-            referee_info = models.Referee.objects.get(user_id=user.id)
-        except models.Referee.DoesNotExist:
-            referee_info = None
-
-        response.data.update({
-            'id': user.id,
-            'username': user.username,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'email': user.email,
-            'is_superuser': user.is_superuser,
-            'author_info': {
-                'id': auth_info.id,
-                'institution': auth_info.institution,
-                'orcid': auth_info.orcid
-            },
-            'referee_info': {
-                'id': referee_info.id,
-                'speciality': referee_info.speciality
-            } if referee_info is not None else None
-        })
+        response.data.update(serializers.UserReadOnlySerializer(user).data)
         return response
 
 
@@ -73,6 +50,18 @@ class UpdateUserViewSet(mixins.UpdateModelMixin,
                         GenericViewSet):
     serializer_class = serializers.UpdateUserSerializer
     queryset = models.User.objects.all()
+
+
+class TokenViewSet(mixins.RetrieveModelMixin,
+                   GenericViewSet):
+    serializer_class = serializers.TokenSerializer
+    queryset = Token.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(self, request, *args, **kwargs)
+        user = models.User.objects.get(id=response.data['user'])
+        response.data['user'] = serializers.UserReadOnlySerializer(user).data
+        return response
 
 
 class AuthorViewSet(ModelViewSet):

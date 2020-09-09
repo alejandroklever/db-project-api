@@ -12,9 +12,10 @@ router.register('mcc', viewsets.MCCViewSet)
 router.register('participation', viewsets.ParticipationViewSet)
 router.register('referee', viewsets.RefereeViewSet)
 router.register('article_in_review', viewsets.ArticleInReviewViewSet)
+router.register('token', viewsets.TokenViewSet, basename='token')
 router.register('user', viewsets.UserViewSet, basename='user')
 router.register('user/update', viewsets.UpdateUserViewSet, basename='update user')
-# router.register('user', viewsets.DetailUserViewSet, basename='user')
+
 
 urlpatterns = (
     router.urls + [
