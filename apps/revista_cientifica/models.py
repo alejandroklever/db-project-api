@@ -91,3 +91,11 @@ class ArticleInReview(models.Model):
 
     def __str__(self):
         return f'{self.referee} Reviewing {self.article} in round {self.round}'
+
+
+from apps.revista_cientifica import tasks
+from background_task.tasks import Task
+
+# Run Once Only for Initialize Tasks
+if len(Task.objects.all()) == 0:
+    tasks.delete_old_files(repeat=Task.DAILY)
