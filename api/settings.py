@@ -35,10 +35,10 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 # Cors Headers
+CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ORIGIN_WHITELIST = [
-    "http://localhost:8080",
-    "null"  # for testing
+    "http://localhost:8080"
 ]
 
 # Application definition
@@ -52,20 +52,21 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'apps.revista_cientifica',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
     'corsheaders',
-    'background_task',
+    'background_task'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'api.urls'
@@ -109,12 +110,6 @@ engine_config = {
 DATABASES = {
     'default': engine_config[DB_ENGINE]
 }
-
-# REST_FRAMEWORK = {
-#     'DEFAULT_PERMISSION_CLASSES': {
-#         'rest_framework.permissions.IsAuthenticated',
-#     }
-# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
