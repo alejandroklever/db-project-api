@@ -1,3 +1,8 @@
+import os
+
+from background_task import background
+from background_task.tasks import Task
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
@@ -93,9 +98,28 @@ class ArticleInReview(models.Model):
         return f'{self.referee} Reviewing {self.article} in round {self.round}'
 
 
-from apps.revista_cientifica import tasks
-from background_task.tasks import Task
+def delete_file(file: File):
+    path = os.path.join(settings.BASE_DIR, file.file.name)
+    os.remove(path)
+    file.delete()
+
+
+@background(schedule=10)
+def delete_old_files():
+    print('Doing Background not necessary files delete')
+    newest_files = {}
+    for file in File.objects.all():
+        if file.article.end_date is not None:
+            try:
+                if newest_files[file.article.id].date > file.date:
+                    delete_file(file)
+                else:
+                    delete_file(newest_files[file.article.id])
+                    newest_files[file.article.id] = file
+            except KeyError:
+                newest_files[file.article.id] = file
+
 
 # Run Once Only for Initialize Tasks
 if len(Task.objects.all()) == 0:
-    tasks.delete_old_files(repeat=Task.DAILY)
+    delete_old_files(repeat=Task.DAILY)
