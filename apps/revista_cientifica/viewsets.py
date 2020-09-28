@@ -23,33 +23,37 @@ class UserAuthView(ObtainAuthToken):
         response = super(UserAuthView, self).post(request, *args, **kwargs)
         token = response.data['token']
         user = Token.objects.get(key=token).user
-        response.data.update(serializers.UserReadOnlySerializer(user).data)
+        response.data.update(serializers.UserInfoSerializer(user).data)
         return response
 
 
-class UserViewSet(mixins.CreateModelMixin,
-                  mixins.RetrieveModelMixin,
-                  mixins.ListModelMixin,
-                  GenericViewSet):
+class UserViewSet(ModelViewSet):
+    queryset = models.User.objects.all()
     filter_backends = [custom_filters.GenericFilterBackend, filters.SearchFilter]
+    serializer_class = serializers.UserInfoSerializer
+
+    info_serializer_class = serializers.UserInfoSerializer
+    create_serializer_class = serializers.UserCreateSerializer
+    update_serializer_class = serializers.UserUpdateSerializer
     search_fields = ['^username', '^first_name', '^last_name']
-    serializer_class = serializers.UserSerializer
-    queryset = models.User.objects.all()
 
-    def retrieve(self, request, *args, **kwargs):
-        user = models.User.objects.get(id=kwargs['pk'])
-        serializer = serializers.UserReadOnlySerializer(user)
-        return Response(serializer.data)
+    def create(self, request, *args, **kwargs):
+        self.serializer_class = self.create_serializer_class
+        response = super(UserViewSet, self).create(request, *args, **kwargs)
+        self.serializer_class = self.info_serializer_class
 
-    def list(self, request, *args, **kwargs):
-        serializer = serializers.UserReadOnlySerializer(self.queryset, many=True)
-        return Response(serializer.data)
+        if 400 <= response.status_code <= 599:  # error
+            return response
+        return Response(self.serializer_class(self.get_object()).data)
 
+    def update(self, request, *args, **kwargs):
+        self.serializer_class = self.update_serializer_class
+        response = super(UserViewSet, self).update(request, *args, **kwargs)
+        self.serializer_class = self.info_serializer_class
 
-class UpdateUserViewSet(mixins.UpdateModelMixin,
-                        GenericViewSet):
-    serializer_class = serializers.UpdateUserSerializer
-    queryset = models.User.objects.all()
+        if 400 <= response.status_code <= 599:  # error
+            return response
+        return Response(self.serializer_class(self.get_object()).data)
 
 
 class TokenViewSet(mixins.RetrieveModelMixin,
@@ -60,7 +64,7 @@ class TokenViewSet(mixins.RetrieveModelMixin,
     def retrieve(self, request, *args, **kwargs):
         response = super().retrieve(self, request, *args, **kwargs)
         user = models.User.objects.get(id=response.data['user'])
-        response.data['user'] = serializers.UserReadOnlySerializer(user).data
+        response.data['user'] = serializers.UserInfoSerializer(user).data
         return response
 
 
@@ -111,18 +115,18 @@ class ParticipationViewSet(ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = serializers.ParticipationReadOnlyFieldSerializer
-        out = super().retrieve(request, *args, **kwargs)
+        response = super(ParticipationViewSet, self).retrieve(request, *args, **kwargs)
         self.serializer_class = serializers.ParticipationSerializer
-        return out
+        return response
 
     def list(self, request, *args, **kwargs):
         self.serializer_class = serializers.ParticipationReadOnlyFieldSerializer
-        out = super().list(request, *args, **kwargs)
+        response = super(ParticipationViewSet, self).list(request, *args, **kwargs)
         self.serializer_class = serializers.ParticipationSerializer
-        return out
+        return response
 
     def create(self, request, *args, **kwargs):
-        result = super().create(request, args, kwargs)
+        result = super(ParticipationViewSet, self).create(request, args, kwargs)
         if result.status_code == 201:
             notification_maker.new_participation(result.data['id'])
         return result
@@ -140,30 +144,35 @@ class ArticleInReviewViewSet(ModelViewSet):
     serializer_class = serializers.ArticleInReviewSerializer
     filter_backends = [custom_filters.GenericFilterBackend]
 
+    default_serializer_class = serializers.ArticleInReviewSerializer
+    info_serializer_class = serializers.ArticleInReviewInfoSerializer
+
     def retrieve(self, request, *args, **kwargs):
-        self.serializer_class = serializers.ArticleInReviewReadOnlyFieldSerializer
-        out = super().retrieve(request, *args, **kwargs)
+        self.serializer_class = serializers.ArticleInReviewInfoSerializer
+        response = super(ArticleInReviewViewSet, self).retrieve(request, *args, **kwargs)
         self.serializer_class = serializers.ArticleInReviewSerializer
-        return out
+        return response
 
     def list(self, request, *args, **kwargs):
-        self.serializer_class = serializers.ArticleInReviewReadOnlyFieldSerializer
-        out = super().list(request, *args, **kwargs)
+        self.serializer_class = serializers.ArticleInReviewInfoSerializer
+        response = super(ArticleInReviewViewSet, self).list(request, *args, **kwargs)
         self.serializer_class = serializers.ArticleInReviewSerializer
-        return out
+        return response
 
     def create(self, request, *args, **kwargs):
-        result = super().create(request, args, kwargs)
-        if result.status_code == 201:
-            notification_maker.new_review(result.data['id'])
-        return result
+        response = super(ArticleInReviewViewSet, self).create(request, args, kwargs)
+
+        if response.status_code == 201:
+            notification_maker.new_review(response.data['id'])
+        return response
 
     def update(self, request, *args, **kwargs):
         previous_state = models.ArticleInReview.objects.get(id=kwargs['pk']).state
-        result = super().update(request, args, kwargs)
-        if result.status_code == 200:
-            notification_maker.updated_review(result.data['id'], previous_state)
-        return result
+        response = super(ArticleInReviewViewSet, self).update(request, args, kwargs)
+
+        if response.status_code == 200:
+            notification_maker.updated_review(response.data['id'], previous_state)
+        return response
 
 
 class FileViewSet(ModelViewSet):

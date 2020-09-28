@@ -1,29 +1,25 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.serializers import ModelSerializer, RelatedField
 
-from .models import (User, Author, Notification, MCC, Article, File, Participation, Referee, ArticleInReview)
+from .models import User, Author, Notification, MCC, Article, File, Participation, Referee, ArticleInReview
 
 
-class RelatedFieldJSONRepresentation(RelatedField):
+class CustomRelatedField(RelatedField):
     representation_fields = []
 
     def to_internal_value(self, data):
-        pass
+        return data
 
     def to_representation(self, value):
         d = value.__dict__
         return {field: d[field] for field in self.representation_fields}
 
 
-class UserRelatedField(RelatedFieldJSONRepresentation):
-    representation_fields = ['id', 'username', 'first_name', 'last_name', 'is_superuser']
-
-
-class ArticleRelatedField(RelatedFieldJSONRepresentation):
+class ArticleRelatedField(CustomRelatedField):
     representation_fields = ['id', 'title', 'keywords', 'evaluation', 'end_date']
 
 
-class AuthorRelatedField(RelatedFieldJSONRepresentation):
+class AuthorRelatedField(CustomRelatedField):
     representation_fields = ['id', 'institution', 'orcid']
 
 
@@ -31,7 +27,7 @@ class RefereeRelatedField(AuthorRelatedField):
     representation_fields = ['id', 'speciality']
 
 
-class UserSerializer(ModelSerializer):
+class UserCreateSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email', 'password']
@@ -42,7 +38,37 @@ class UserSerializer(ModelSerializer):
         return user
 
 
-class UserReadOnlySerializer(ModelSerializer):
+class UserUpdateSerializer(ModelSerializer):
+    author = AuthorRelatedField(queryset=Author.objects.all())
+    referee = RefereeRelatedField(queryset=Referee.objects.all(), allow_null=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name', 'author', 'referee']
+
+    def update(self, instance, validated_data):
+        user = instance
+        author_data = validated_data.pop('author', None)
+        referee_data = validated_data.pop('referee', None)
+
+        user.username = validated_data['username']
+        user.email = validated_data['email']
+        user.first_name = validated_data['first_name']
+        user.last_name = validated_data['last_name']
+
+        if author_data:
+            user.author.institution = author_data['institution']
+            user.author.save()
+
+        if referee_data:
+            user.referee = referee_data['speciality']
+            user.referee.save()
+
+        user.save()
+        return user
+
+
+class UserInfoSerializer(ModelSerializer):
     author = AuthorRelatedField(read_only=True)
     referee = RefereeRelatedField(read_only=True)
 
@@ -51,38 +77,7 @@ class UserReadOnlySerializer(ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser', 'author', 'referee']
 
 
-class DetailUserSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'first_name', 'last_name', ]
-
-
-class UpdateUserSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['username', 'password', 'email', 'first_name', 'last_name']
-
-    def update(self, instance, validated_data):
-        user = instance
-        user.username = validated_data['username']
-        user.set_password(validated_data['password'])
-        user.email = validated_data['email']
-        user.first_name = validated_data['first_name']
-        user.last_name = validated_data['last_name']
-        user.save()
-        user.password = ''
-        return user
-
-
-class LoginUserSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'email', 'username', 'password']
-
-
 class AuthorSerializer(ModelSerializer):
-    user = UserRelatedField(read_only=True)
-
     class Meta:
         model = Author
         exclude = ['articles', ]
@@ -133,16 +128,16 @@ class RefereeSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class ArticleInReviewReadOnlyFieldSerializer(ModelSerializer):
-    article = ArticleRelatedField(read_only=True)
-    referee = RefereeRelatedField(read_only=True)
-
+class ArticleInReviewSerializer(ModelSerializer):
     class Meta:
         model = ArticleInReview
         fields = '__all__'
 
 
-class ArticleInReviewSerializer(ModelSerializer):
+class ArticleInReviewInfoSerializer(ModelSerializer):
+    article = ArticleRelatedField(read_only=True)
+    referee = RefereeRelatedField(read_only=True)
+
     class Meta:
         model = ArticleInReview
         fields = '__all__'
