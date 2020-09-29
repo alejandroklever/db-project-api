@@ -1,5 +1,5 @@
 from rest_framework.authtoken.models import Token
-from rest_framework.serializers import ModelSerializer, RelatedField
+from rest_framework.serializers import ModelSerializer, RelatedField, CharField, IntegerField
 
 from .models import User, Author, Notification, MCC, Article, File, Participation, Referee, ArticleInReview
 
@@ -20,7 +20,7 @@ class ArticleRelatedField(CustomRelatedField):
 
 
 class AuthorRelatedField(CustomRelatedField):
-    representation_fields = ['id', 'institution', 'orcid']
+    representation_fields = ['id', 'profile_image_url', 'institution', 'orcid']
 
 
 class RefereeRelatedField(AuthorRelatedField):
@@ -28,13 +28,21 @@ class RefereeRelatedField(AuthorRelatedField):
 
 
 class UserCreateSerializer(ModelSerializer):
+    orcid = IntegerField()
+    institution = CharField(max_length=200)
+
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
+        fields = ['username', 'email', 'password', 'orcid', 'institution']
 
     def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
+        user = User.objects.create_user(username=validated_data['username'],
+                                        email=validated_data['email'],
+                                        password=validated_data['password'])
         Token.objects.create(user=user)
+        Author.objects.create(user=user,
+                              orcid=validated_data['orcid'],
+                              institution=validated_data['institution'])
         return user
 
 
@@ -83,6 +91,12 @@ class AuthorSerializer(ModelSerializer):
         exclude = ['articles', ]
 
 
+class RefereeSerializer(ModelSerializer):
+    class Meta:
+        model = Referee
+        fields = '__all__'
+
+
 class NotificationSerializer(ModelSerializer):
     class Meta:
         model = Notification
@@ -101,33 +115,6 @@ class ArticleSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class FileSerializer(ModelSerializer):
-    class Meta:
-        model = File
-        fields = '__all__'
-
-
-class ParticipationReadOnlyFieldSerializer(ModelSerializer):
-    author = AuthorRelatedField(read_only=True)
-    article = ArticleRelatedField(read_only=True)
-
-    class Meta:
-        model = Participation
-        fields = '__all__'
-
-
-class ParticipationSerializer(ModelSerializer):
-    class Meta:
-        model = Participation
-        fields = '__all__'
-
-
-class RefereeSerializer(ModelSerializer):
-    class Meta:
-        model = Referee
-        fields = '__all__'
-
-
 class ArticleInReviewSerializer(ModelSerializer):
     class Meta:
         model = ArticleInReview
@@ -140,6 +127,27 @@ class ArticleInReviewInfoSerializer(ModelSerializer):
 
     class Meta:
         model = ArticleInReview
+        fields = '__all__'
+
+
+class FileSerializer(ModelSerializer):
+    class Meta:
+        model = File
+        fields = '__all__'
+
+
+class ParticipationSerializer(ModelSerializer):
+    class Meta:
+        model = Participation
+        fields = '__all__'
+
+
+class ParticipationReadOnlyFieldSerializer(ModelSerializer):
+    author = AuthorRelatedField(read_only=True)
+    article = ArticleRelatedField(read_only=True)
+
+    class Meta:
+        model = Participation
         fields = '__all__'
 
 

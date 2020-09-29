@@ -7,6 +7,28 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
 
+MEDIA_ROOT = os.path.join('apps', 'revista_cientifica', 'media')
+
+
+class Author(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    orcid = models.BigIntegerField(unique=True, null=True, blank=False, default=2**32)
+    profile_image_url = models.ImageField(blank=True, upload_to=os.path.join(MEDIA_ROOT, 'images'))
+    institution = models.CharField(max_length=200, null=True, blank=True)
+    articles = models.ManyToManyField('Article', through='Participation')
+
+    def __str__(self):
+        return f'{self.user}'
+
+
+class Referee(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=False)
+    speciality = models.ManyToManyField('MCC')
+    articles = models.ManyToManyField('Article', through='ArticleInReview')
+
+    def __str__(self):
+        return f'{self.user}'
+
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -27,7 +49,7 @@ class MCC(models.Model):
 
 
 class Article(models.Model):
-    title: models.CharField = models.CharField(max_length=150, blank=False)
+    title = models.CharField(max_length=150, blank=False)
     mcc = models.ForeignKey(MCC, on_delete=models.CASCADE)
     keywords = models.CharField(null=True, blank=True, max_length=300)
 
@@ -40,23 +62,13 @@ class Article(models.Model):
 
 
 class File(models.Model):
-    file = models.FileField(null=False, upload_to='apps/revista_cientifica/media', blank=False)
+    file = models.FileField(null=False, upload_to=os.path.join('apps', 'revista_cientifica', 'media'), blank=False)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     file_name = models.CharField(max_length=150)
     date = models.DateTimeField(blank=True, default=now)
 
     def __str__(self):
         return f'{self.file_name} from {self.article}'
-
-
-class Author(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    institution = models.CharField(max_length=200, null=True, blank=True)
-    articles = models.ManyToManyField(Article, through='Participation')
-    orcid = models.BigIntegerField(unique=True, null=True, blank=False, default=1000000000000000)
-
-    def __str__(self):
-        return f'{self.user}'
 
 
 class Participation(models.Model):
@@ -69,15 +81,6 @@ class Participation(models.Model):
 
     def __str__(self):
         return f'{self.author} in {self.article}'
-
-
-class Referee(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=False)
-    speciality = models.ManyToManyField(MCC)
-    articles = models.ManyToManyField(Article, through='ArticleInReview')
-
-    def __str__(self):
-        return f'{self.user}'
 
 
 class ArticleInReview(models.Model):

@@ -30,7 +30,7 @@ class UserAuthView(ObtainAuthToken):
 class UserViewSet(ModelViewSet):
     queryset = models.User.objects.all()
     filter_backends = [custom_filters.GenericFilterBackend, filters.SearchFilter]
-    serializer_class = serializers.UserInfoSerializer
+    serializer_class = serializers.UserCreateSerializer
 
     info_serializer_class = serializers.UserInfoSerializer
     create_serializer_class = serializers.UserCreateSerializer
@@ -40,20 +40,29 @@ class UserViewSet(ModelViewSet):
     def create(self, request, *args, **kwargs):
         self.serializer_class = self.create_serializer_class
         response = super(UserViewSet, self).create(request, *args, **kwargs)
-        self.serializer_class = self.info_serializer_class
 
         if 400 <= response.status_code <= 599:  # error
             return response
-        return Response(self.serializer_class(self.get_object()).data)
+        return Response(self.info_serializer_class(self.get_object()).data)
 
     def update(self, request, *args, **kwargs):
         self.serializer_class = self.update_serializer_class
         response = super(UserViewSet, self).update(request, *args, **kwargs)
-        self.serializer_class = self.info_serializer_class
 
         if 400 <= response.status_code <= 599:  # error
             return response
-        return Response(self.serializer_class(self.get_object()).data)
+        return Response(self.info_serializer_class(self.get_object()).data)
+
+    def retrieve(self, request, *args, **kwargs):
+        self.serializer_class = self.info_serializer_class
+        response = super(UserViewSet, self).retrieve(request, *args, **kwargs)
+        return response
+
+    def list(self, request, *args, **kwargs):
+        self.serializer_class = self.info_serializer_class
+        response = super(UserViewSet, self).list(request, *args, **kwargs)
+        self.serializer_class = self.create_serializer_class
+        return response
 
 
 class TokenViewSet(mixins.RetrieveModelMixin,
@@ -71,8 +80,6 @@ class TokenViewSet(mixins.RetrieveModelMixin,
 class AuthorViewSet(ModelViewSet):
     queryset = models.Author.objects.all()
     serializer_class = serializers.AuthorSerializer
-    filter_backends = [custom_filters.GenericFilterBackend, filters.SearchFilter]
-    search_fields = ['^user__username', '^user__first_name', '^user__last_name']
 
 
 class NotificationViewSet(ModelViewSet):
@@ -199,23 +206,4 @@ class FileViewSet(ModelViewSet):
             raise e
 
 
-def download_file(request, path: str) -> HttpResponse:
-    file_path = os.path.join(settings.BASE_DIR, 'apps', 'revista_cientifica', 'media', path)
-    if os.path.exists(file_path):
-        with open(file_path, 'rb') as fh:
-            response = HttpResponse(fh.read(), content_type="text/plain")
-            response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(file_path)
-            return response
-    raise Http404()
 
-
-def download_report(request, pk: int) -> HttpResponse:
-    id_notification = pk
-    notification = models.Notification.objects.get(id=id_notification)
-    author = models.Author.objects.get(user=notification.user)
-    file_path = generate_document(str(author), author.institution, notification.content, notification.date)
-    with open(file_path, 'rb') as fh:
-        response = HttpResponse(fh.read(), content_type="application/msword")
-        response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(file_path)
-        os.remove(file_path)
-        return response
