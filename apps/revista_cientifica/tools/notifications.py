@@ -97,13 +97,12 @@ We expect their response in 3 months.''')
             if review.state == 'Calificando':
                 self.notifier.notify_user(referee, text_thanks)
 
-
     @staticmethod
     def __get_authors_for_article(article: models.Article):
         authors = [str(participation.author) for participation in models.Participation.objects.filter(article=article)]
         if len(authors) == 0:
             return ''
-        authors_str = ' of '+authors[0]
+        authors_str = ' of ' + authors[0]
         for author in authors[1:]:
             authors_str += f'; {author}'
         return authors_str

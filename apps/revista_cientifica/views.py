@@ -2,9 +2,21 @@ import os
 
 from django.conf import settings
 from django.http import HttpResponse, Http404
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
 
 import apps.revista_cientifica.models as models
-from apps.revista_cientifica.document_maker import generate_document
+from apps.revista_cientifica.serializers import UserInfoSerializer
+from apps.revista_cientifica.tools.documents import generate_document
+
+
+class UserAuthView(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        response = super(UserAuthView, self).post(request, *args, **kwargs)
+        token = response.data['token']
+        user = Token.objects.get(key=token).user
+        response.data.update(UserInfoSerializer(user).data)
+        return response
 
 
 def download_file(request, path: str):
