@@ -2,86 +2,14 @@ import os
 
 from django.conf import settings
 from rest_framework import filters, mixins, status
-from rest_framework import generics
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
-import apps.revista_cientifica.models as models
-import apps.revista_cientifica.serializers as serializers
+from apps.revista_cientifica import models, serializers
 from apps.revista_cientifica.tools import NotificationMaker, GenericFilterBackend
 
 notification_maker = NotificationMaker()
-
-
-class UserViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
-    queryset = models.User.objects.all().order_by('id')  # For avoid an UnorderedObjectListWarning
-    filter_backends = [GenericFilterBackend, filters.SearchFilter]
-    serializer_class = serializers.UserInfoSerializer
-    search_fields = ['^username', '^first_name', '^last_name']
-
-
-class UserCreateView(generics.CreateAPIView):
-    queryset = models.User.objects.all()
-    serializer_class = serializers.UserCreateSerializer
-
-    def create(self, request, *args, **kwargs):
-        serializer:serializers.UserCreateSerializer  = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        # headers = self.get_success_headers(serializer.data)
-        # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-        return Response(serializers.UserInfoSerializer(serializer.instance, many=False).data,
-                        status=status.HTTP_201_CREATED)
-
-
-class UserUpdateView(generics.UpdateAPIView):
-    queryset = models.User.objects.all()
-    serializer_class = serializers.UserUpdateSerializer
-
-    def get_object(self):
-        return self.queryset.get(id=self.kwargs['pk'])
-
-    def update(self, request, *args, **kwargs):
-        response = super(UserUpdateView, self).update(request, *args, **kwargs)
-
-        if 400 <= response.status_code <= 599:  # error
-            return response
-        return Response(serializers.UserInfoSerializer(self.get_object()).data)
-
-
-class UserRetrieveView(generics.RetrieveAPIView):
-    queryset = models.User.objects.all()
-    serializer_class = serializers.UserInfoSerializer
-
-
-class UserListView(generics.ListAPIView):
-    queryset = models.User.objects.all().order_by('id')
-    serializer_class = serializers.UserInfoSerializer
-    filter_backends = [GenericFilterBackend, filters.SearchFilter]
-
-
-class UserChangePasswordView(generics.UpdateAPIView):
-    queryset = models.User.objects.all()
-    serializer_class = serializers.UserChangePasswordSerializer
-
-    def get_object(self):
-        return self.queryset.get(id=self.kwargs['pk'])
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(data=request.data)
-
-        try:
-            serializer.update(instance, request.data)
-        except ValueError:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({'new_password': serializer.data['new_password']})
 
 
 class TokenViewSet(mixins.RetrieveModelMixin, GenericViewSet):

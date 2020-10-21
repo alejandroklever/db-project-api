@@ -1,10 +1,12 @@
+from collections import OrderedDict
+
+from rest_framework import serializers
 from rest_framework.authtoken.models import Token
-from rest_framework.serializers import ModelSerializer, Serializer, RelatedField, CharField, IntegerField, EmailField
 
 import apps.revista_cientifica.models as models
 
 
-class CustomRelatedField(RelatedField):
+class CustomRelatedField(serializers.RelatedField):
     representation_fields = []
 
     def to_internal_value(self, data):
@@ -27,12 +29,12 @@ class RefereeRelatedField(AuthorRelatedField):
     representation_fields = ['id', 'speciality']
 
 
-class UserCreateSerializer(Serializer):
-    username = CharField(max_length=200)
-    password = CharField(max_length=200)
-    email = EmailField(max_length=200)
-    orcid = IntegerField()
-    institution = CharField(max_length=200)
+class UserCreateSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=200)
+    password = serializers.CharField(max_length=200)
+    email = serializers.EmailField(max_length=200)
+    orcid = serializers.IntegerField()
+    institution = serializers.CharField(max_length=200)
 
     def create(self, validated_data):
         user = models.User.objects.create_user(username=validated_data['username'],
@@ -47,19 +49,12 @@ class UserCreateSerializer(Serializer):
     def update(self, instance, validated_data):
         raise NotImplementedError()
 
-    # def to_representation(self, instance: models.User):
-    #     return {
-    #         'username': instance.username,
-    #         'first_name': instance.first_name,
-    #         'last_name': instance.last_name,
-    #         'email': instance.email,
-    #         'is_superuser': instance.is_superuser,
-    #         'author': AuthorSerializer(instance.author).data if instance.author is not None else None,
-    #         'referee': None
-    #     }
+    def to_representation(self, instance: models.User):
+        return OrderedDict(username=instance.username, email=instance.email, password=instance.password,
+                           institution=instance.author.institution, orcid=instance.author.orcid)
 
 
-class UserUpdateSerializer(ModelSerializer):
+class UserUpdateSerializer(serializers.ModelSerializer):
     author = AuthorRelatedField(queryset=models.Author.objects.all())
     referee = RefereeRelatedField(queryset=models.Referee.objects.all(), allow_null=True)
 
@@ -89,9 +84,9 @@ class UserUpdateSerializer(ModelSerializer):
         return user
 
 
-class UserChangePasswordSerializer(Serializer):
-    password = CharField(max_length=200)
-    new_password = CharField(max_length=200)
+class UserChangePasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=200)
+    new_password = serializers.CharField(max_length=200)
 
     def create(self, validated_data):
         raise NotImplemented()
@@ -104,7 +99,7 @@ class UserChangePasswordSerializer(Serializer):
         return instance
 
 
-class UserInfoSerializer(ModelSerializer):
+class UserInfoSerializer(serializers.ModelSerializer):
     author = AuthorRelatedField(read_only=True)
     referee = RefereeRelatedField(read_only=True)
 
@@ -113,43 +108,43 @@ class UserInfoSerializer(ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser', 'author', 'referee']
 
 
-class AuthorSerializer(ModelSerializer):
+class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Author
         exclude = ['articles', ]
 
 
-class RefereeSerializer(ModelSerializer):
+class RefereeSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Referee
         exclude = ['articles', ]
 
 
-class NotificationSerializer(ModelSerializer):
+class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Notification
         fields = '__all__'
 
 
-class MCCSerializer(ModelSerializer):
+class MCCSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.MCC
         fields = '__all__'
 
 
-class ArticleSerializer(ModelSerializer):
+class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Article
         fields = '__all__'
 
 
-class ArticleInReviewSerializer(ModelSerializer):
+class ArticleInReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ArticleInReview
         fields = '__all__'
 
 
-class ArticleInReviewInfoSerializer(ModelSerializer):
+class ArticleInReviewInfoSerializer(serializers.ModelSerializer):
     article = ArticleRelatedField(read_only=True)
     referee = RefereeRelatedField(read_only=True)
 
@@ -158,19 +153,19 @@ class ArticleInReviewInfoSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class FileSerializer(ModelSerializer):
+class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.File
         fields = '__all__'
 
 
-class ParticipationSerializer(ModelSerializer):
+class ParticipationSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Participation
         fields = '__all__'
 
 
-class ParticipationReadOnlyFieldSerializer(ModelSerializer):
+class ParticipationReadOnlyFieldSerializer(serializers.ModelSerializer):
     author = AuthorRelatedField(read_only=True)
     article = ArticleRelatedField(read_only=True)
 
@@ -179,7 +174,7 @@ class ParticipationReadOnlyFieldSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class TokenSerializer(ModelSerializer):
+class TokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = Token
         fields = '__all__'

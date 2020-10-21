@@ -11,7 +11,6 @@ MEDIA_ROOT = os.path.join('apps', 'revista_cientifica', 'media')
 class Author(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     orcid = models.BigIntegerField(unique=True, null=True, blank=False, default=2**32)
-    profile_image_url = models.ImageField(default='', blank=True, upload_to=os.path.join(MEDIA_ROOT, 'images'))
     institution = models.CharField(max_length=200, null=True, blank=True)
     articles = models.ManyToManyField('Article', through='Participation')
 
