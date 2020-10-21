@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import path, include
 
-from apps.revista_cientifica.viewsets import download_file, download_report
+from apps.revista_cientifica.views import download_file, download_report
 
 urlpatterns = [
     path('', lambda r: redirect('revista.cientifica/api/v1/user/')),

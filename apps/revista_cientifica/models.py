@@ -1,11 +1,30 @@
 import os
 
-from background_task import background
 from background_task.tasks import Task
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
+
+MEDIA_ROOT = os.path.join('apps', 'revista_cientifica', 'media')
+
+
+class Author(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    orcid = models.BigIntegerField(unique=True, null=True, blank=False, default=2**32)
+    institution = models.CharField(max_length=200, null=True, blank=True)
+    articles = models.ManyToManyField('Article', through='Participation')
+
+    def __str__(self):
+        return f'{self.user}'
+
+
+class Referee(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=False)
+    speciality = models.ManyToManyField('MCC')
+    articles = models.ManyToManyField('Article', through='ArticleInReview')
+
+    def __str__(self):
+        return f'{self.user}'
 
 
 class Notification(models.Model):
@@ -27,7 +46,7 @@ class MCC(models.Model):
 
 
 class Article(models.Model):
-    title: models.CharField = models.CharField(max_length=150, blank=False)
+    title = models.CharField(max_length=150, blank=False)
     mcc = models.ForeignKey(MCC, on_delete=models.CASCADE)
     keywords = models.CharField(null=True, blank=True, max_length=300)
 
@@ -40,23 +59,13 @@ class Article(models.Model):
 
 
 class File(models.Model):
-    file = models.FileField(null=False, upload_to='apps/revista_cientifica/media', blank=False)
+    file = models.FileField(null=False, upload_to=os.path.join('apps', 'revista_cientifica', 'media'), blank=False)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     file_name = models.CharField(max_length=150)
     date = models.DateTimeField(blank=True, default=now)
 
     def __str__(self):
         return f'{self.file_name} from {self.article}'
-
-
-class Author(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    institution = models.CharField(max_length=200, null=True, blank=True)
-    articles = models.ManyToManyField(Article, through='Participation')
-    orcid = models.BigIntegerField(unique=True, null=True, blank=False, default=1000000000000000)
-
-    def __str__(self):
-        return f'{self.user}'
 
 
 class Participation(models.Model):
@@ -69,15 +78,6 @@ class Participation(models.Model):
 
     def __str__(self):
         return f'{self.author} in {self.article}'
-
-
-class Referee(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=False)
-    speciality = models.ManyToManyField(MCC)
-    articles = models.ManyToManyField(Article, through='ArticleInReview')
-
-    def __str__(self):
-        return f'{self.user}'
 
 
 class ArticleInReview(models.Model):
@@ -96,30 +96,3 @@ class ArticleInReview(models.Model):
 
     def __str__(self):
         return f'{self.referee} Reviewing {self.article} in round {self.round}'
-
-
-def delete_file(file: File):
-    path = os.path.join(settings.BASE_DIR, file.file.name)
-    os.remove(path)
-    file.delete()
-
-
-@background(schedule=10)
-def delete_old_files():
-    print('Doing Background not necessary files delete')
-    newest_files = {}
-    for file in File.objects.all():
-        if file.article.end_date is not None:
-            try:
-                if newest_files[file.article.id].date > file.date:
-                    delete_file(file)
-                else:
-                    delete_file(newest_files[file.article.id])
-                    newest_files[file.article.id] = file
-            except KeyError:
-                newest_files[file.article.id] = file
-
-
-# Run Once Only for Initialize Tasks
-if len(Task.objects.all()) == 0:
-    delete_old_files(repeat=Task.DAILY)

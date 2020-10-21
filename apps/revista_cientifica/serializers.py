@@ -1,10 +1,12 @@
+from collections import OrderedDict
+
+from rest_framework import serializers
 from rest_framework.authtoken.models import Token
-from rest_framework.serializers import ModelSerializer, RelatedField
 
-from .models import User, Author, Notification, MCC, Article, File, Participation, Referee, ArticleInReview
+import apps.revista_cientifica.models as models
 
 
-class CustomRelatedField(RelatedField):
+class CustomRelatedField(serializers.RelatedField):
     representation_fields = []
 
     def to_internal_value(self, data):
@@ -27,23 +29,37 @@ class RefereeRelatedField(AuthorRelatedField):
     representation_fields = ['id', 'speciality']
 
 
-class UserCreateSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password']
+class UserCreateSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=200)
+    password = serializers.CharField(max_length=200)
+    email = serializers.EmailField(max_length=200)
+    orcid = serializers.IntegerField()
+    institution = serializers.CharField(max_length=200)
 
     def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
+        user = models.User.objects.create_user(username=validated_data['username'],
+                                               email=validated_data['email'],
+                                               password=validated_data['password'])
         Token.objects.create(user=user)
+        models.Author.objects.create(user=user,
+                                     orcid=validated_data['orcid'],
+                                     institution=validated_data['institution'])
         return user
 
+    def update(self, instance, validated_data):
+        raise NotImplementedError()
 
-class UserUpdateSerializer(ModelSerializer):
-    author = AuthorRelatedField(queryset=Author.objects.all())
-    referee = RefereeRelatedField(queryset=Referee.objects.all(), allow_null=True)
+    def to_representation(self, instance: models.User):
+        return OrderedDict(username=instance.username, email=instance.email, password=instance.password,
+                           institution=instance.author.institution, orcid=instance.author.orcid)
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    author = AuthorRelatedField(queryset=models.Author.objects.all())
+    referee = RefereeRelatedField(queryset=models.Referee.objects.all(), allow_null=True)
 
     class Meta:
-        model = User
+        model = models.User
         fields = ['username', 'email', 'first_name', 'last_name', 'author', 'referee']
 
     def update(self, instance, validated_data):
@@ -68,82 +84,97 @@ class UserUpdateSerializer(ModelSerializer):
         return user
 
 
-class UserInfoSerializer(ModelSerializer):
+class UserChangePasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=200)
+    new_password = serializers.CharField(max_length=200)
+
+    def create(self, validated_data):
+        raise NotImplemented()
+
+    def update(self, instance, validated_data):
+        if not instance.check_password(validated_data['password']):
+            raise ValueError('Incorrect Password')
+        instance.set_password(validated_data['new_password'])
+        instance.save()
+        return instance
+
+
+class UserInfoSerializer(serializers.ModelSerializer):
     author = AuthorRelatedField(read_only=True)
     referee = RefereeRelatedField(read_only=True)
 
     class Meta:
-        model = User
+        model = models.User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser', 'author', 'referee']
 
 
-class AuthorSerializer(ModelSerializer):
+class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Author
+        model = models.Author
         exclude = ['articles', ]
 
 
-class NotificationSerializer(ModelSerializer):
+class RefereeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Notification
+        model = models.Referee
+        exclude = ['articles', ]
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Notification
         fields = '__all__'
 
 
-class MCCSerializer(ModelSerializer):
+class MCCSerializer(serializers.ModelSerializer):
     class Meta:
-        model = MCC
+        model = models.MCC
         fields = '__all__'
 
 
-class ArticleSerializer(ModelSerializer):
+class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Article
+        model = models.Article
         fields = '__all__'
 
 
-class FileSerializer(ModelSerializer):
+class ArticleInReviewSerializer(serializers.ModelSerializer):
     class Meta:
-        model = File
+        model = models.ArticleInReview
         fields = '__all__'
 
 
-class ParticipationReadOnlyFieldSerializer(ModelSerializer):
-    author = AuthorRelatedField(read_only=True)
-    article = ArticleRelatedField(read_only=True)
-
-    class Meta:
-        model = Participation
-        fields = '__all__'
-
-
-class ParticipationSerializer(ModelSerializer):
-    class Meta:
-        model = Participation
-        fields = '__all__'
-
-
-class RefereeSerializer(ModelSerializer):
-    class Meta:
-        model = Referee
-        fields = '__all__'
-
-
-class ArticleInReviewSerializer(ModelSerializer):
-    class Meta:
-        model = ArticleInReview
-        fields = '__all__'
-
-
-class ArticleInReviewInfoSerializer(ModelSerializer):
+class ArticleInReviewInfoSerializer(serializers.ModelSerializer):
     article = ArticleRelatedField(read_only=True)
     referee = RefereeRelatedField(read_only=True)
 
     class Meta:
-        model = ArticleInReview
+        model = models.ArticleInReview
         fields = '__all__'
 
 
-class TokenSerializer(ModelSerializer):
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.File
+        fields = '__all__'
+
+
+class ParticipationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Participation
+        fields = '__all__'
+
+
+class ParticipationReadOnlyFieldSerializer(serializers.ModelSerializer):
+    author = AuthorRelatedField(read_only=True)
+    article = ArticleRelatedField(read_only=True)
+
+    class Meta:
+        model = models.Participation
+        fields = '__all__'
+
+
+class TokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = Token
         fields = '__all__'
