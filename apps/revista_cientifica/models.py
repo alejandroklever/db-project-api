@@ -5,8 +5,6 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
 
-MEDIA_ROOT = os.path.join('apps', 'revista_cientifica', 'media')
-
 
 class Author(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -49,9 +47,7 @@ class Article(models.Model):
     title = models.CharField(max_length=150, blank=False)
     mcc = models.ForeignKey(MCC, on_delete=models.CASCADE)
     keywords = models.CharField(null=True, blank=True, max_length=300)
-
     evaluation = models.CharField(blank=True, null=True, max_length=100)
-    authors = models.ManyToManyField('Author', through='Participation')
     end_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):

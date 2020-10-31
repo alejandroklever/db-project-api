@@ -25,8 +25,8 @@ class AuthorRelatedField(CustomRelatedField):
     representation_fields = ['id', 'institution', 'orcid']
 
 
-class RefereeRelatedField(AuthorRelatedField):
-    representation_fields = ['id']
+class RefereeRelatedField(CustomRelatedField):
+    representation_fields = ['id', 'speciality']
 
 
 class UserCreateSerializer(serializers.Serializer):
