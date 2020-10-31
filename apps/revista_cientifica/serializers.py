@@ -25,7 +25,7 @@ class AuthorRelatedField(CustomRelatedField):
     representation_fields = ['id', 'institution', 'orcid']
 
 
-class RefereeRelatedField(AuthorRelatedField):
+class RefereeRelatedField(CustomRelatedField):
     representation_fields = ['id', 'speciality']
 
 

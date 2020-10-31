@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     'apps.revista_cientifica',
     'rest_framework',
     'rest_framework.authtoken',
-    'django_filters',
     'corsheaders',
     'background_task'
 ]

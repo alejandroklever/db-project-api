@@ -1,12 +1,12 @@
 asgiref==3.2.10
 Django==3.1
 django-background-tasks==1.2.5
+django-compat==1.0.15
 django-cors-headers==3.4.0
-django-filter==2.3.0
 djangorestframework==3.11.1
-docx==0.2.4
 lxml==4.5.2
 psycopg2==2.8.5
 python-docx==0.8.10
 pytz==2020.1
+six==1.15.0
 sqlparse==0.3.1
