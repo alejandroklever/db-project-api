@@ -21,6 +21,7 @@ urlpatterns = (
         path('user/<int:pk>/', views.UserRetrieveView.as_view()),
         path('user/create/', views.UserCreateView.as_view()),
         path('user/update/<int:pk>/', views.UserUpdateView.as_view()),
-        path('user/change_password/<int:pk>/', views.UserChangePasswordView.as_view())
+        path('user/change_password/<int:pk>/', views.UserChangePasswordView.as_view()),
+        path('coauthors/<int:pk>/', views.CoAuthorsListView.as_view())
     ]
 )

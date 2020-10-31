@@ -86,7 +86,7 @@ class UserAuthView(ObtainAuthToken):
 
 
 def download_file(request, path: str):
-    file_path = os.path.join(settings.BASE_DIR, 'apps', 'revista_cientifica', 'media', 'file', path)
+    file_path = os.path.join(settings.BASE_DIR, 'apps', 'revista_cientifica', 'media', path)
     if os.path.exists(file_path):
         with open(file_path, 'rb') as fh:
             response = HttpResponse(fh.read(), content_type="text/plain")
@@ -104,3 +104,26 @@ def download_report(request, pk: int):
         response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(file_path)
         os.remove(file_path)
         return response
+
+
+class CoAuthorsListView(generics.RetrieveAPIView):
+    queryset = models.Participation.objects.all().order_by('id')
+    serializer_class = None
+    filter_backends = [GenericFilterBackend, filters.SearchFilter]
+
+    def retrieve(self, request, *args, **kwargs):
+        author = models.Author.objects.get(id=kwargs['pk'])
+        participations = models.Participation.objects.filter(author=author)
+        articles = [par.article for par in participations]
+        authors_par = [models.Participation.objects.filter(article=article) for article in articles]
+        authors = [[par.author for par in parts] for parts in authors_par]
+        files = [models.File.objects.filter(article=article).order_by('id') for article in articles]
+        files = [item[len(item)-1] if len(item) > 0 else None for item in files]
+        data = []
+        for item1, item2, item3 in zip(articles, authors, files):
+            dic = {'article': serializers.ArticleSerializer(item1).data,
+                   'authors': [serializers.UserInfoSerializer(item.user).data for item in item2],
+                   'file': f'{item3.file.name if item3 is not None else None}'}
+            data.append(dic)
+        return Response({'data': data})
+

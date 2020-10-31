@@ -51,7 +51,7 @@ class Article(models.Model):
     keywords = models.CharField(null=True, blank=True, max_length=300)
 
     evaluation = models.CharField(blank=True, null=True, max_length=100)
-
+    authors = models.ManyToManyField('Author', through='Participation')
     end_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
