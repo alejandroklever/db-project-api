@@ -106,7 +106,7 @@ def download_report(request, pk: int):
         return response
 
 
-class CoAuthorsListView(generics.RetrieveAPIView):
+class CoAuthorsPerArticleListView(generics.RetrieveAPIView):
     queryset = models.Participation.objects.all().order_by('id')
     serializer_class = None
     filter_backends = [GenericFilterBackend, filters.SearchFilter]
@@ -126,4 +126,22 @@ class CoAuthorsListView(generics.RetrieveAPIView):
                 'authors': [serializers.UserInfoSerializer(item.user).data for item in item2],
                 'file': f'{item3.file.name if item3 is not None else None}'
             })
+        return Response({'data': data})
+
+
+class CoAuthorsListView(generics.RetrieveAPIView):
+    queryset = models.Participation.objects.all().order_by('id')
+    serializer_class = None
+    filter_backends = [GenericFilterBackend, filters.SearchFilter]
+
+    def retrieve(self, request, *args, **kwargs):
+        author = models.Author.objects.get(id=kwargs['pk'])
+        participations = models.Participation.objects.filter(author=author)
+        articles = [participation.article for participation in participations]
+        coauthors_par_query_set = [models.Participation.objects.filter(article=article) for article in articles]
+        authors = set()
+        for parts_query_set in coauthors_par_query_set:
+            for participation in parts_query_set:
+                authors.add(participation.author)
+        data = [serializers.UserInfoSerializer(item.user).data for item in authors]
         return Response({'data': data})
