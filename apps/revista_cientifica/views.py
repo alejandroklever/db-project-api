@@ -114,16 +114,16 @@ class CoAuthorsListView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         author = models.Author.objects.get(id=kwargs['pk'])
         participations = models.Participation.objects.filter(author=author)
-        articles = [par.article for par in participations]
+        articles = [participation.article for participation in participations]
         authors_par = [models.Participation.objects.filter(article=article) for article in articles]
         authors = [[par.author for par in parts] for parts in authors_par]
         files = [models.File.objects.filter(article=article).order_by('id') for article in articles]
-        files = [item[len(item)-1] if len(item) > 0 else None for item in files]
+        files = [item[len(item) - 1] if len(item) > 0 else None for item in files]
         data = []
         for item1, item2, item3 in zip(articles, authors, files):
-            dic = {'article': serializers.ArticleSerializer(item1).data,
-                   'authors': [serializers.UserInfoSerializer(item.user).data for item in item2],
-                   'file': f'{item3.file.name if item3 is not None else None}'}
-            data.append(dic)
+            data.append({
+                'article': serializers.ArticleSerializer(item1).data,
+                'authors': [serializers.UserInfoSerializer(item.user).data for item in item2],
+                'file': f'{item3.file.name if item3 is not None else None}'
+            })
         return Response({'data': data})
-

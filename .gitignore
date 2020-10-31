@@ -143,3 +143,4 @@ cython_debug/
 .idea
 .vscode
 apps/revista_cientifica/media
+revista_cientifica.sqlite3
