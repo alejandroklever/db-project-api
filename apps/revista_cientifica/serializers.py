@@ -18,7 +18,7 @@ class CustomRelatedField(serializers.RelatedField):
 
 
 class ArticleRelatedField(CustomRelatedField):
-    representation_fields = ['id', 'title', 'keywords', 'evaluation', 'end_date']
+    representation_fields = ['id', 'title', 'keywords', 'evaluation', 'end_date', 'authors']
 
 
 class AuthorRelatedField(CustomRelatedField):
@@ -26,7 +26,7 @@ class AuthorRelatedField(CustomRelatedField):
 
 
 class RefereeRelatedField(AuthorRelatedField):
-    representation_fields = ['id', 'speciality']
+    representation_fields = ['id']
 
 
 class UserCreateSerializer(serializers.Serializer):
