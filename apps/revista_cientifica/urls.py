@@ -11,7 +11,7 @@ router.register('file', viewsets.FileViewSet)
 router.register('mcc', viewsets.MCCViewSet)
 router.register('participation', viewsets.ParticipationViewSet)
 router.register('referee', viewsets.RefereeViewSet)
-router.register('article_in_review', viewsets.ArticleInReviewViewSet)
+router.register('reviews', viewsets.ArticleInReviewViewSet)
 router.register('token', viewsets.TokenViewSet)
 
 urlpatterns = (
