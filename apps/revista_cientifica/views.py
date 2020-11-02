@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 from django.conf import settings
 from django.http import HttpResponse, Http404
@@ -121,12 +122,11 @@ class CoAuthorsPerArticleListView(generics.RetrieveAPIView):
         files = [item[-1] if len(item) > 0 else None for item in files]
         data = []
         for article, author, file in zip(articles, authors, files):
-            data.append({
-                'article': serializers.ArticleSerializer(article).data,
-                'authors': [serializers.UserInfoSerializer(item.user).data for item in author],
-                'file': f'{file.file.name if file is not None else None}'
-            })
-        return Response({'data': data})
+            article_data = serializers.ArticleSerializer(article).data
+            article_data['authors'] = [serializers.UserInfoSerializer(item.user).data for item in author]
+            article_data['file'] = f'{file.file.name if file is not None else ""}'
+            data.append(article_data)
+        return Response({'articles': data})
 
 
 class CoAuthorsListView(generics.RetrieveAPIView):
@@ -143,5 +143,5 @@ class CoAuthorsListView(generics.RetrieveAPIView):
         for parts_query_set in coauthors_par_query_set:
             for participation in parts_query_set:
                 authors.add(participation.author)
-        data = [serializers.UserInfoSerializer(item.user).data for item in authors]
-        return Response({'data': data})
+        data = [serializers.UserInfoSerializer(author.user).data for author in authors]
+        return Response(data)

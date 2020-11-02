@@ -18,7 +18,7 @@ class Author(models.Model):
 
 class Referee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=False)
-    speciality = models.ManyToManyField('MCC')
+    specialities = models.ManyToManyField('MCC')
     articles = models.ManyToManyField('Article', through='ArticleInReview')
 
     def __str__(self):

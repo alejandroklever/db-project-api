@@ -25,8 +25,15 @@ class AuthorRelatedField(CustomRelatedField):
     representation_fields = ['id', 'institution', 'orcid']
 
 
-class RefereeRelatedField(CustomRelatedField):
-    representation_fields = ['id', 'speciality']
+class RefereeRelatedField(serializers.RelatedField):
+    def to_internal_value(self, data):
+        return data
+
+    def to_representation(self, value: models.Referee):
+        return {
+            'id': value.id,
+            'specialities': [s.id for s in value.specialities.all()]
+        }
 
 
 class UserCreateSerializer(serializers.Serializer):
